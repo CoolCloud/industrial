@@ -1,10 +1,25 @@
 Industrial Dependency Injection Framework for PHP 5.3
 =====================================================
-Industrial is a dependency injection framework for PHP 5.3 inspired by Google
-Guice. Using the Module class configure rules for creating objects.
+Industrial is a dependency injection framework for PHP 5.3 inspired by Google 
+Guice. 
 
-Example
--------
+Getting Started
+---------------
+The recommended way to use Industrial is through [composer](http://getcomposer.org). 
+Add Industrial to your project's ``composer.json`` file:
+    
+    {
+        "require": {
+            "pihi/industrial": "*"
+        }
+    }
+
+Find out more about Composer installation and use, along with other best
+practices at http://getcomposer.org/doc/00-intro.md
+
+
+Basic Usage
+-----------
 ```php
 <?php
 
@@ -28,11 +43,11 @@ class TestClass
 
 class Module extends \Industrial\Module
 {
-    protected function config()
+    protected function config()                
     {
-        $this->bind(TestClass::$class)
-             ->construct(array("one","two"))
-             ->method("argument");
+        $this->bind(TestClass::$class)          // Create an \Industrial\Binder for \TestClass
+             ->construct(array("one","two"))    // Apply these parameters to the constructor
+             ->method("argument");              // After __construct() call method("argument")
     }
 }
 
@@ -41,3 +56,4 @@ $testobj = $di->make(TestClass::$class);
 
 ?>
 ```
+
