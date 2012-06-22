@@ -78,6 +78,8 @@ class Binder
      * Provide arguments for the __construct method of the bound class
      * @param array $args
      * @return \Industrial\Binder Provide Fluent Interface
+     * @todo Implement checks to ensure that the proper argument types
+             were passed.
      */
     public function construct($args = null)
     {
