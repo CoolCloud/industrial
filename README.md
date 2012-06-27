@@ -48,6 +48,28 @@ class Module extends \Industrial\Module
         $this->bind(TestClass::$class)          // Create an \Industrial\Binder for \TestClass
              ->construct(array("one","two"))    // Apply these parameters to the constructor
              ->method("argument");              // After __construct() call method("argument")
+
+        $this->bind(TestClass::$class)          // Create an \Industrial\Binder for \TestClass
+             ->using(function(){                // Use a callback to instantiate object
+                    return new TestClass();     //
+               })->method("argument");          // Call method("argument") 
+
+        $this->bind(TestClass::$class)          // Accomplishes the same as above
+             ->using(function(){                //
+                    $obj = new TestClass();     //
+                    $obj->method("argument");   //
+                    return $obj;                //
+               });                              //
+        
+        $this->bind(TestClass::$class)          // Accomplishes the same as above
+             ->using(array(                     // 
+                $this,'initTestClass'));        //
+    }
+
+    public function initTestClass() {
+        $obj = new TestClass();
+        $obj->method("argument");
+        return $obj;
     }
 }
 

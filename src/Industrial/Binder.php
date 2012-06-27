@@ -50,10 +50,15 @@ class Binder
      */
     private $_reflection = null;
 
+    /**
+     * @var callback
+     */
+    private $_callback = null;
+
     /** 
      * @var array
      */
-    private $_constructArgs = array();
+    private $_constructArgs = null;
 
     /**
      * @var array
@@ -75,12 +80,40 @@ class Binder
     }
 
     /**
+     * Provide a callback to build the bound object. If constructor arguments
+     * are also provided the constructor will be called first, then passed to 
+     * the callback. 
+     *
+     * @param callback $callback
+     * @param boolean $constructFirst Force calling empty constructor if no 
+     *  constructor arguments are provided
+     * @return \Industrial\Binder Provide Fluent Interface
+     */
+    public function using($callback, $constructFirst = false)
+    {
+        if ($this->_constructorArgs) 
+            throw new \InvalidArgumentException("Only one of construct() or 
+                using() may be used.");
+
+        if (!is_callable($callback))
+            throw new \InvalidArgumentException("Callback must be a callable 
+                function");
+
+        $this->_callback = $callback;
+        return $this;
+    }
+
+    /**
      * Provide arguments for the __construct method of the bound class
      * @param array $args
      * @return \Industrial\Binder Provide Fluent Interface
      */
     public function construct(array $args = null)
     {
+        if ($this->_callback) 
+            throw new \InvalidArgumentException("Only one of construct() or 
+                using() may be used.");
+
         $this->checkArguments($this->_reflection->getConstructor(), $args);
         $this->_constructArgs = $args;
         return $this;
@@ -121,6 +154,13 @@ class Binder
      */
     public function build()
     {
+        if ($this->_callback) {
+            $obj = $this->_callback();
+            if (!($obj instanceof $this->__className)) 
+                throw new \InvalidArgumentException(sprintf("Callback must 
+                    provide an instance of %s", $this->_className));
+        }
+
         if ($this->_constructArgs) {
             $obj = $this->_reflection->newInstanceArgs($this->_constructArgs);
         } else {
