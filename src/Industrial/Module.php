@@ -23,7 +23,7 @@
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1
+ * @version 0.1.1
  * @since 0.1
  */
 namespace Industrial;
@@ -35,7 +35,7 @@ namespace Industrial;
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1
+ * @version 0.1.1
  * @since 0.1
  */
 abstract class Module
