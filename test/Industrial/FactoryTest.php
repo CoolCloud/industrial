@@ -9,16 +9,16 @@ class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
     public function testModuleLoad()
     {
         $factory = new \Industrial\Factory(new TestModule);
-        $obj = $factory->make(TestClass1::$class);
-        $this->assertTrue($obj instanceof TestClass1::$class, "Failed to create class");
+        $obj = $factory->make(FactoryTestClass1::$class);
+        $this->assertTrue($obj instanceof FactoryTestClass1::$class, "Failed to create class");
     }
 
     public function testBindClassAfter()
     {
         $factory = new \Industrial\Factory(new TestModule);
-        $factory->addBound(new \Industrial\Binder(TestClass2::$class));
-        $obj = $factory->make(TestClass2::$class);
-        $this->assertTrue($obj instanceof TestClass2::$class, "Failed to create class");
+        $factory->addBound(new \Industrial\Binder(FactoryTestClass2::$class));
+        $obj = $factory->make(FactoryTestClass2::$class);
+        $this->assertTrue($obj instanceof FactoryTestClass2::$class, "Failed to create class");
     }
 
     /**
@@ -35,16 +35,16 @@ class TestModule extends \Industrial\Module
 {
     protected function config()
     {
-        $this->bind(TestClass1::$class);
+        $this->bind(FactoryTestClass1::$class);
     }
 }
 
-class TestClass1
+class FactoryTestClass1
 {
-    public static $class = "TestClass1";
+    public static $class = "FactoryTestClass1";
 }
 
-class TestClass2
+class FactoryTestClass2
 {
-    public static $class = "TestClass2";
+    public static $class = "FactoryTestClass2";
 }

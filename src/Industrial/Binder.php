@@ -23,7 +23,7 @@
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.1
+ * @version 0.1.2
  * @since 0.1
  */
 namespace Industrial;
@@ -35,7 +35,7 @@ namespace Industrial;
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.1
+ * @version 0.1.2
  * @since 0.1
  */
 class Binder
@@ -78,11 +78,10 @@ class Binder
      * Provide arguments for the __construct method of the bound class
      * @param array $args
      * @return \Industrial\Binder Provide Fluent Interface
-     * @todo Implement checks to ensure that the proper argument types
-             were passed.
      */
     public function construct(array $args = null)
     {
+        $this->checkArguments($this->_reflection->getConstructor(), $args);
         $this->_constructArgs = $args;
         return $this;
     }
@@ -92,8 +91,15 @@ class Binder
      * the bound class
      * @return \Industrial\Binder Provide Fluent Interface
      */
-    public function __call($method,$args)
+    public function __call($method, array $args)
     {
+        if ($refl_method = $this->_reflection->getMethod($method)) {
+            $this->checkArguments($refl_method, $args);
+        } else {
+            $args = array($method, $args);
+            $method = "__call";
+        }
+
         $this->_methods[] = array($method,$args);
         return $this;
     }
@@ -126,5 +132,48 @@ class Binder
         }
 
         return $obj;
+    }
+
+    /**
+     *  
+     */
+    private function checkArguments(\ReflectionMethod $method, array $args)
+    {
+        $cnt = count($args);
+        if ($cnt < $method->getNumberOfRequiredParameters()) {
+            throw new \InvalidArgumentException(sprintf("%s::%s() requires %d
+                arguments, %d were passed", $this->_className, $method->name, 
+                $method->getNumberOfRequiredParameters(), $cnt));
+        }
+
+        $c = 0;
+        foreach ($method->getParameters() as $param) {
+            $arg = $args[$c];
+            $this->checkArgument($param, $arg, $method->name);
+            if (++$c >= $cnt) break;
+        }
+    }
+
+    /**
+     */
+    private function checkArgument(\ReflectionParameter $param, $arg, $method)
+    {
+        if (is_null($arg) && !$param->allowsNull()) 
+            throw new \InvalidArgumentException(sprintf('%s::%s() does not
+                allow null arguments in position %s', $this->_className, 
+                $method, $param->getPosition()));
+        if ($param->isArray()) {
+            if (!is_array($arg)) 
+                throw new \InvalidArgumentException(sprintf('%s::%s() requires 
+                    argument in position %s to be an array',$this->_className, 
+                    $method, $param->getPosition()));
+        } else if ($param->getClass()) {
+            $cname = $param->getClass()->getName();
+            if (!($arg instanceof $cname))
+                throw new \InvalidArgumentException(sprintf('%s::%s() requires 
+                    argument in position %s to be an instance of %s', 
+                    $this->_className, $method, $param->getPosition(),
+                    $param->getClass()->getName()));
+        }
     }
 }
