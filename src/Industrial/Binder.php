@@ -81,7 +81,7 @@ class Binder
      * @todo Implement checks to ensure that the proper argument types
              were passed.
      */
-    public function construct($args = null)
+    public function construct(array $args = null)
     {
         $this->_constructArgs = $args;
         return $this;
@@ -94,7 +94,7 @@ class Binder
      */
     public function __call($method,$args)
     {
-        $this->_methods[] = [$method,$args];
+        $this->_methods[] = array($method,$args);
         return $this;
     }
 
