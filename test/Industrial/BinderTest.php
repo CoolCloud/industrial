@@ -36,7 +36,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException BadMethodCallException
      */
     public function testTypedConstructorArguments2()
     {
@@ -53,7 +53,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException BadMethodCallException
      */
     public function testTypedConstructorArguments4()
     {
@@ -62,7 +62,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException BadMethodCallException
      */
     public function testCountedConstructorArguments()
     {
@@ -85,9 +85,12 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     
     public function testInterfaceBinding()
     {
-    	$binder = new \Industrial\Binder(BinderTestInterface1::$class);
+    	$binder = new \Industrial\Binder("BinderTestInterface1");
     	$binder->to(BinderTestClass4::$class)->method1();
-    	$binder->build();
+        $obj = $binder->build();
+
+        $this->assertTrue($obj instanceof BinderTestInterface1, "Object not instance of interface");
+        $this->assertTrue($obj instanceof BinderTestClass4, "Object not instance of concrete class");
     }
     
     /**
@@ -95,7 +98,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
      */
     public function testInterfaceBindingWithoutImplementedInterface()
     {
-    	$binder = new \Industrial\Binder(BinderTestInterface1::$class);
+    	$binder = new \Industrial\Binder("BinderTestInterface1");
     	$binder->to(BinderTestClass3::$class);
     	$binder->build();
     }
@@ -104,7 +107,10 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     {
     	$binder = new \Industrial\Binder(BinderTestAbstract1::$class);
     	$binder->to(BinderTestClass5::$class)->method1();
-    	$binder->build();
+        $obj = $binder->build();
+
+        $this->assertTrue($obj instanceof BinderTestAbstract1, "Not instance of abstract class");
+        $this->assertTrue($obj instanceof BinderTestClass5, "Not instance of concrete class");
     }
     
     /**
@@ -116,6 +122,15 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     	$binder->to(BinderTestClass3::$class);
     	$binder->build();
     }
+
+    /**
+     * @expectedException BadMethodCallException
+     */
+    public function testBuildAbstractBoundClass()
+    {
+        $binder = \Industrial\Binder::bind(BinderTestAbstract1::$class);
+        $binder->build();
+    } 
 }
 
 class BinderTestClass1
@@ -162,7 +177,6 @@ class BinderTestClass3
 
 interface BinderTestInterface1
 {
-	public static $class = "BinderTestInterface1";
 	public function method1();
 }
 
@@ -184,7 +198,7 @@ abstract class BinderTestAbstract1
 
 class BinderTestClass5 extends BinderTestAbstract1
 {
-	public static $class = "BinderTestAbstract1";
+	public static $class = "BinderTestClass5";
 	
 	public function method1()
 	{

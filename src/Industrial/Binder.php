@@ -48,7 +48,12 @@ class Binder
     /**
      * @var \ReflectionClass
      */
-    private $_reflection = null;
+    private $_abstReflection = null;
+
+    /**
+     * @var \ReflectionClass
+     */
+    private $_implReflection = null;
 
     /**
      * @var callback
@@ -66,17 +71,56 @@ class Binder
     private $_methods = array();
 
     /**
+     * Static access to the constructor for chaining.
+     *
+     * @param string $className
+     */
+    public static function bind($className) 
+    {
+        return new self($className);
+    }
+
+    /**
      * Constuctor.
      *
      * @param string $className
      */
     public function __construct($className) 
     {
-        if (!class_exists($className)) 
-            throw new \InvalidArgumentException("Class: $className does not exist or could not be found");
+        if (!class_exists($className) && !interface_exists($className)) 
+            throw new \InvalidArgumentException("Class or Interface: "  
+            . "$className does not exist or could not be found");
 
         $this->_className = $className;
-        $this->_reflection = new \ReflectionClass($className);
+
+        $reflection = new \ReflectionClass($className);
+        if ($reflection->isAbstract() || $reflection->isInterface()) {
+            $this->_abstReflection = $reflection;
+        } else {
+            $this->_implReflection = $reflection;
+        }
+    }
+
+    /**
+     * Binds a concrete implementation of an abstract or interface that
+     * was provided during __construct()
+     *
+     * @param string $className Concrete implementation of abstract class
+     * @return \Industrial\Binder Provide Fluent Interface
+     */
+    public function to($className)
+    {
+        if ($this->_implReflection && !$this->_abstReflection)
+            $this->_abstReflection = $this->_implReflection;
+
+        $this->_implReflection = new \ReflectionClass($className);
+
+        if (!($this->_implReflection->isSubclassOf(
+                $this->_abstReflection->name))) 
+            throw new \InvalidArgumentException(sprintf("%s does not extend " 
+                . "or implement %s", $className, $this->_abstReflection->name));
+        
+        return $this;
     }
 
     /**
@@ -92,12 +136,12 @@ class Binder
     public function using($callback, $constructFirst = false)
     {
         if ($this->_constructorArgs) 
-            throw new \InvalidArgumentException("Only one of construct() or 
-                using() may be used.");
+            throw new \BadMethodCallException("Only one of construct() or "
+                . "using() may be used.");
 
         if (!is_callable($callback))
-            throw new \InvalidArgumentException("Callback must be a callable 
-                function");
+            throw new \BadMethodCallException("Callback must be a callable "
+                . "function");
 
         $this->_callback = $callback;
         return $this;
@@ -111,10 +155,10 @@ class Binder
     public function construct(array $args = null)
     {
         if ($this->_callback) 
-            throw new \InvalidArgumentException("Only one of construct() or 
-                using() may be used.");
+            throw new \BadMethodCallException("Only one of construct() or "
+                . "using() may be used.");
 
-        $this->checkArguments($this->_reflection->getConstructor(), $args);
+        $this->checkArguments($this->_implReflection->getConstructor(), $args);
         $this->_constructArgs = $args;
         return $this;
     }
@@ -126,9 +170,17 @@ class Binder
      */
     public function __call($method, array $args)
     {
-        if ($refl_method = $this->_reflection->getMethod($method)) {
+        try {
+            $refl_method = $this->_implReflection->getMethod($method);
+            if (!$refl_method->isPublic())
+                throw new \InvalidArgumentException(sprintf("%s::%s() is not "
+                    . "publicly visible", $this->_className, $method));
             $this->checkArguments($refl_method, $args);
-        } else {
+        } catch (\ReflectionException $e) {
+            if (!$this->_implReflection->hasMethod("__call")) 
+                throw new \InvalidArgumentException(sprintf("%s::%s() does not "
+                    . "exist or cannot be called",$this->_className, $method));
+
             $args = array($method, $args);
             $method = "__call";
         }
@@ -154,17 +206,22 @@ class Binder
      */
     public function build()
     {
+        if (!$this->_implReflection) 
+            throw new \BadMethodCallException(sprintf("No implementation "
+                . "of abstract class or interface %s could be found",
+                $this->_abstReflection->name));
+
         if ($this->_callback) {
             $obj = $this->_callback();
             if (!($obj instanceof $this->__className)) 
-                throw new \InvalidArgumentException(sprintf("Callback must 
-                    provide an instance of %s", $this->_className));
+                throw new \InvalidArgumentException(sprintf("Callback must "
+                    . "provide an instance of %s", $this->_className));
         }
 
         if ($this->_constructArgs) {
-            $obj = $this->_reflection->newInstanceArgs($this->_constructArgs);
+            $obj = $this->_implReflection->newInstanceArgs($this->_constructArgs);
         } else {
-            $obj = $this->_reflection->newInstance();
+            $obj = $this->_implReflection->newInstance();
         }
 
         foreach ($this->_methods as $method) {
@@ -181,8 +238,8 @@ class Binder
     {
         $cnt = count($args);
         if ($cnt < $method->getNumberOfRequiredParameters()) {
-            throw new \InvalidArgumentException(sprintf("%s::%s() requires %d
-                arguments, %d were passed", $this->_className, $method->name, 
+            throw new \BadMethodCallException(sprintf("%s::%s() requires %d "
+                . "arguments, %d were passed", $this->_className, $method->name, 
                 $method->getNumberOfRequiredParameters(), $cnt));
         }
 
@@ -199,19 +256,19 @@ class Binder
     private function checkArgument(\ReflectionParameter $param, $arg, $method)
     {
         if (is_null($arg) && !$param->allowsNull()) 
-            throw new \InvalidArgumentException(sprintf('%s::%s() does not
-                allow null arguments in position %s', $this->_className, 
+            throw new \BadMethodCallException(sprintf("%s::%s() does not "
+                . "allow null arguments in position %s", $this->_className, 
                 $method, $param->getPosition()));
         if ($param->isArray()) {
             if (!is_array($arg)) 
-                throw new \InvalidArgumentException(sprintf('%s::%s() requires 
-                    argument in position %s to be an array',$this->_className, 
+                throw new \BadMethodCallException(sprintf("%s::%s() requires "
+                    . "argument in position %s to be an array",$this->_className, 
                     $method, $param->getPosition()));
         } else if ($param->getClass()) {
             $cname = $param->getClass()->getName();
             if (!($arg instanceof $cname))
-                throw new \InvalidArgumentException(sprintf('%s::%s() requires 
-                    argument in position %s to be an instance of %s', 
+                throw new \BadMethodCallException(sprintf("%s::%s() requires "
+                    . "argument in position %s to be an instance of %s", 
                     $this->_className, $method, $param->getPosition(),
                     $param->getClass()->getName()));
         }
