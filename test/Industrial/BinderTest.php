@@ -82,6 +82,40 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
         $obj = $binder->build();
         $this->assertTrue(($obj->method1_argument1 == $a1 && $obj->method1_argument2 == $a2 && $obj->method2_argument1 == $a3 && $obj->method2_argument2 == $a4), "Failed to set method arguments");
     }
+    
+    public function testInterfaceBinding()
+    {
+    	$binder = new \Industrial\Binder(BinderTestInterface1::$class);
+    	$binder->to(BinderTestClass4::$class)->method1();
+    	$binder->build();
+    }
+    
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInterfaceBindingWithoutImplementedInterface()
+    {
+    	$binder = new \Industrial\Binder(BinderTestInterface1::$class);
+    	$binder->to(BinderTestClass3::$class);
+    	$binder->build();
+    }
+    
+    public function testAbstractBinding()
+    {
+    	$binder = new \Industrial\Binder(BinderTestAbstract1::$class);
+    	$binder->to(BinderTestClass5::$class)->method1();
+    	$binder->build();
+    }
+    
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testAbstractBindingWithoutExtendedClass()
+    {
+    	$binder = new \Industrial\Binder(BinderTestAbstract1::$class);
+    	$binder->to(BinderTestClass3::$class);
+    	$binder->build();
+    }
 }
 
 class BinderTestClass1
@@ -124,4 +158,36 @@ class BinderTestClass3
 {
     public static $class = "BinderTestClass3";
     public function __construct(array $array_argument) {}
+}
+
+interface BinderTestInterface1
+{
+	public static $class = "BinderTestInterface1";
+	public function method1();
+}
+
+class BinderTestClass4 implements BinderTestInterface1
+{
+	public static $class = "BinderTestClass4";
+	
+	public function method1()
+	{
+		
+	}
+}
+
+abstract class BinderTestAbstract1
+{
+	public static $class = "BinderTestAbstract1";
+	abstract public function method1();
+}
+
+class BinderTestClass5 extends BinderTestAbstract1
+{
+	public static $class = "BinderTestAbstract1";
+	
+	public function method1()
+	{
+		
+	}
 }
