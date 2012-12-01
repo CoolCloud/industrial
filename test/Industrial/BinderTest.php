@@ -1,37 +1,48 @@
 <?php
 
-require_once "src/Industrial/Binder.php";
+require_once "test/Autoload.php";
 
 class Industrial_BinderTest extends PHPUnit_Framework_TestCase
 {
+    private function getMockFactory()
+    {
+        $c = "\\Industrial\\Factory";
+        return $this->getMock($c, array(), array(
+            $this->getMockForAbstractClass("\\Industrial\\Module")));
+    }
+
     public function testBindClass()
     {
-        $binder = new \Industrial\Binder(BinderTestClass1::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass1::$class);
         $this->assertTrue($binder->is(BinderTestClass1::$class), "Failed to match Binder classname");
     }
 
     public function testBuildClass()
     {
-        $binder = new \Industrial\Binder(BinderTestClass1::$class);
-        $obj = $binder->build();
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass1::$class)->toSelf();
+        $obj = $binder->builder()->build();
         $this->assertTrue($obj instanceof BinderTestClass1::$class, "Failed to build proper class");
     }
 
     public function testConstuctorArguments()
     {
-        $binder = new \Industrial\Binder(BinderTestClass1::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass1::$class);
         $a1 = rand(0,10000);
         $a2 = rand(0,10000);
         $binder->construct(array($a1,$a2));
-        $obj = $binder->build();
+        $obj = $binder->builder()->build();
         $this->assertTrue(($obj->constructor_argument1 == $a1 && $obj->constructor_argument2 == $a2), "Failed to set constructor arguments");
     }
 
     public function testTypedConstructorArguments1()
     {
-        $binder = new \Industrial\Binder(BinderTestClass2::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass2::$class);
         $binder->construct(array(new BinderTestClass1));
-        $obj = $binder->build();
+        $obj = $binder->builder()->build();
         $this->assertTrue(($obj instanceof BinderTestClass2), "Failed to build class");
     }
 
@@ -40,15 +51,17 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
      */
     public function testTypedConstructorArguments2()
     {
-        $binder = new \Industrial\Binder(BinderTestClass2::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass2::$class);
         $binder->construct(array("String"));
     }
 
     public function testTypedConstructerArguments3()
     {
-        $binder = new \Industrial\Binder(BinderTestClass3::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass3::$class);
         $binder->construct(array(array()));
-        $obj = $binder->build();
+        $obj = $binder->builder()->build();
         $this->assertTrue(($obj instanceof BinderTestClass3), "Failed to build class");
     }
 
@@ -57,7 +70,8 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
      */
     public function testTypedConstructorArguments4()
     {
-        $binder = new \Industrial\Binder(BinderTestClass3::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass3::$class);
         $binder->construct(array("String"));
     }
 
@@ -66,28 +80,32 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
      */
     public function testCountedConstructorArguments()
     {
-        $binder = new \Industrial\Binder(BinderTestClass3::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass3::$class);
         $binder->construct(array());
     }
 
     public function testMethodArguments()
     {
-        $binder = new \Industrial\Binder(BinderTestClass1::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestClass1::$class);
+        $binder->toSelf();
         $a1 = rand(0,10000);
         $a2 = rand(0,10000);
         $a3 = rand(0,10000);
         $a4 = rand(0,10000);
         $binder->method1($a1,$a2);
         $binder->method2($a3,$a4);
-        $obj = $binder->build();
+        $obj = $binder->builder()->build();
         $this->assertTrue(($obj->method1_argument1 == $a1 && $obj->method1_argument2 == $a2 && $obj->method2_argument1 == $a3 && $obj->method2_argument2 == $a4), "Failed to set method arguments");
     }
     
     public function testInterfaceBinding()
     {
-    	$binder = new \Industrial\Binder("BinderTestInterface1");
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind("BinderTestInterface1");
     	$binder->to(BinderTestClass4::$class)->method1();
-        $obj = $binder->build();
+        $obj = $binder->builder()->build();
 
         $this->assertTrue($obj instanceof BinderTestInterface1, "Object not instance of interface");
         $this->assertTrue($obj instanceof BinderTestClass4, "Object not instance of concrete class");
@@ -98,16 +116,18 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
      */
     public function testInterfaceBindingWithoutImplementedInterface()
     {
-    	$binder = new \Industrial\Binder("BinderTestInterface1");
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind("BinderTestInterface1");
     	$binder->to(BinderTestClass3::$class);
-    	$binder->build();
+    	$binder->builder()->build();
     }
     
     public function testAbstractBinding()
     {
-    	$binder = new \Industrial\Binder(BinderTestAbstract1::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestAbstract1::$class);
     	$binder->to(BinderTestClass5::$class)->method1();
-        $obj = $binder->build();
+        $obj = $binder->builder()->build();
 
         $this->assertTrue($obj instanceof BinderTestAbstract1, "Not instance of abstract class");
         $this->assertTrue($obj instanceof BinderTestClass5, "Not instance of concrete class");
@@ -118,9 +138,10 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
      */
     public function testAbstractBindingWithoutExtendedClass()
     {
-    	$binder = new \Industrial\Binder(BinderTestAbstract1::$class);
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestAbstract1::$class);
     	$binder->to(BinderTestClass3::$class);
-    	$binder->build();
+    	$binder->builder()->build();
     }
 
     /**
@@ -128,8 +149,9 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
      */
     public function testBuildAbstractBoundClass()
     {
-        $binder = \Industrial\Binder::bind(BinderTestAbstract1::$class);
-        $binder->build();
+        $binder = \Industrial\Binder::bind($this->getMockFactory());
+        $binder->bind(BinderTestAbstract1::$class)->toSelf();
+        $binder->builder()->build();
     } 
 }
 

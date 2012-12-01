@@ -1,8 +1,6 @@
 <?php
 
-require_once "src/Industrial/Module.php";
-require_once "src/Industrial/Binder.php";
-require_once "src/Industrial/Factory.php";
+require_once "test/Autoload.php";
 
 class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
 {
@@ -16,7 +14,11 @@ class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
     public function testBindClassAfter()
     {
         $factory = new \Industrial\Factory(new TestModule);
-        $factory->addBound(new \Industrial\Binder(FactoryTestClass2::$class));
+
+        $binder = new \Industrial\Binder($factory);
+        $binder->bind(FactoryTestClass2::$class)->toSelf();
+        $factory->addBound($binder);
+
         $obj = $factory->make(FactoryTestClass2::$class);
         $this->assertTrue($obj instanceof FactoryTestClass2::$class, "Failed to create class");
     }
@@ -35,7 +37,7 @@ class TestModule extends \Industrial\Module
 {
     protected function config()
     {
-        $this->bind(FactoryTestClass1::$class);
+        $this->bind(FactoryTestClass1::$class)->toSelf();
     }
 }
 

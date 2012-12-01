@@ -23,65 +23,59 @@
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.2
- * @since 0.1
+ * @version 0.2.0
+ * @since 0.2
  */
-namespace Industrial;
+namespace Industrial\Build\Action;
+
+use Industrial\Build;
+use Industrial\Reflect;
 
 /**
- * Abstract module.
+ * Bind Action
  *
  * @package pihi/industrial
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.1
- * @since 0.1
+ * @version 0.2.0
+ * @since 0.2
  */
-abstract class Module
+class Bind implements IAction
 {
-    /**
-     * Factory instance. Will be set only during the scope of the call 
-     * to configure()
-     *
-     * @var \Industrial\Factory
-     */
-    private $_factory = null;
+    const Name = "Bind";
 
-    /**
-     * Create a binder for the given class name and add it to the factory
-     * 
-     * @param string $class
-     * @uses \Industrial\Factory::addBound()
-     * @return \Industrial\Binder
-     * @throws \Exception
-     * @final 
-     */
-    protected final function bind($class)
+    private $_reflection;
+
+    public static function getName()
     {
-        if (!$this->_factory)
-            throw new \Exception("bind must only be call from within the config() method");
-
-        $bound = new Binder($this->_factory);
-        $bound->bind($class);
-        $this->_factory->addBound($bound);
-        return $bound;
+        return self::Name;
     }
 
-    /**
-     * Configure module.
-     * @param \Industrial\Factory
-     */
-    public final function configure(Factory $factory) 
+    public static function isMultiple()
     {
-        $this->_factory = $factory;
-        $this->config();
-        $this->_factory = null;
+        return false;
     }
 
-    /**
-     * Provided for module configuration.
-     * @abstract
-     */
-    abstract protected function config();
+    public function __construct ($className)
+    {
+        $this->_reflection = Reflect\Cache::get($className);
+    }
+
+    public function isFinal($final = null)
+    {
+        return false;
+    }
+
+    public function getProcessor()
+    {
+        $refl = $this->_reflection;
+        return function ($factory, &$obj) use ($refl) {
+            if ($obj != null) 
+                throw new Exception("Bind is given a null object. This should never happen.");
+
+            $obj = $refl;
+        };
+    }
 }
+
