@@ -26,62 +26,69 @@
  * @version 0.1.2
  * @since 0.1
  */
-namespace Industrial;
+namespace Industrial\Build;
 
 /**
- * Abstract module.
+ * Builder.
  *
  * @package pihi/industrial
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.1
+ * @version 0.2.0
  * @since 0.1
  */
-abstract class Module
+class Builder
 {
-    /**
-     * Factory instance. Will be set only during the scope of the call 
-     * to configure()
-     *
-     * @var \Industrial\Factory
-     */
-    private $_factory = null;
+    private $_factory;
 
-    /**
-     * Create a binder for the given class name and add it to the factory
-     * 
-     * @param string $class
-     * @uses \Industrial\Factory::addBound()
-     * @return \Industrial\Binder
-     * @throws \Exception
-     * @final 
-     */
-    protected final function bind($class)
-    {
-        if (!$this->_factory)
-            throw new \Exception("bind must only be call from within the config() method");
+    private $_process = array();
 
-        $bound = new Binder($this->_factory);
-        $bound->bind($class);
-        $this->_factory->addBound($bound);
-        return $bound;
-    }
+    private $_params = array();
 
-    /**
-     * Configure module.
-     * @param \Industrial\Factory
-     */
-    public final function configure(Factory $factory) 
+    public function __construct (\Industrial\Factory $factory)
     {
         $this->_factory = $factory;
-        $this->config();
-        $this->_factory = null;
+    }
+
+    public function __clone ()
+    {
+        $process = array();
+        foreach ($this->_process as $proc) $process[] = $proc;
+        $this->_process = $process;
+    }
+
+    public function addAction(Action\IAction $action) 
+    {
+        $process = $action->getProcessor();
+        if (!is_callable($process)) {
+            throw new \Exception("Action processor must be callable.");
+        }
+        $this->_process[] = $process;
     }
 
     /**
-     * Provided for module configuration.
-     * @abstract
+     * Provide arguments to be passed to Injector
+     * @param string $param Name of constructor parameter
+     * @param mixed $value Value to be passed
+     * @return \Industrial\Build\Builder Provide fluent interface
      */
-    abstract protected function config();
+    public function with($param, $value)
+    {
+        $this->_params[$name] = $value;
+        return $this;
+    }
+
+    /**
+     * @param \Industrial\Factory $factory
+     * @return object
+     */
+    public function build()
+    {
+        $obj = null;
+        foreach ($this->_process as $process) {
+            $process($this->_factory,$obj);
+        }
+        return $obj;
+    }
 }

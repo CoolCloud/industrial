@@ -1,4 +1,4 @@
-<?php
+<?php 
 /**
  * Industrial Dependency Injection Framework
  *
@@ -23,65 +23,21 @@
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.2
- * @since 0.1
+ * @version 0.2.0
+ * @since 0.2
  */
-namespace Industrial;
+namespace Industrial\Reflect;
 
 /**
- * Abstract module.
+ * Reflect Exception.
  *
  * @package pihi/industrial
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.1
- * @since 0.1
+ * @version 0.2.0
+ * @since 0.2
  */
-abstract class Module
-{
-    /**
-     * Factory instance. Will be set only during the scope of the call 
-     * to configure()
-     *
-     * @var \Industrial\Factory
-     */
-    private $_factory = null;
+class Exception extends \Industrial\Exception {}
 
-    /**
-     * Create a binder for the given class name and add it to the factory
-     * 
-     * @param string $class
-     * @uses \Industrial\Factory::addBound()
-     * @return \Industrial\Binder
-     * @throws \Exception
-     * @final 
-     */
-    protected final function bind($class)
-    {
-        if (!$this->_factory)
-            throw new \Exception("bind must only be call from within the config() method");
 
-        $bound = new Binder($this->_factory);
-        $bound->bind($class);
-        $this->_factory->addBound($bound);
-        return $bound;
-    }
-
-    /**
-     * Configure module.
-     * @param \Industrial\Factory
-     */
-    public final function configure(Factory $factory) 
-    {
-        $this->_factory = $factory;
-        $this->config();
-        $this->_factory = null;
-    }
-
-    /**
-     * Provided for module configuration.
-     * @abstract
-     */
-    abstract protected function config();
-}

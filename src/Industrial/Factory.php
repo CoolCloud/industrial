@@ -63,6 +63,12 @@ class Factory
     public function __construct(Module $module)
     {
         $this->_module = $module;
+
+        /*
+        $selfBinder = new Binder($this);
+        $selfBinder->bind(get_class($this))
+            ->toObject($this);
+         */
     }
 
     /**
@@ -71,6 +77,7 @@ class Factory
      */
     public function addBound(Binder $bound)
     {
+        $bound->finalize();
         $this->_bound[] = $bound;
     }
 
@@ -81,10 +88,25 @@ class Factory
      */
     public function getBound($className) 
     {
+        $this->configure();
         foreach ($this->_bound as $bound) {
             if ($bound->is($className)) 
                 return $bound;
         }
+    }
+
+    /**
+     *
+     */
+    public function builder($className)
+    {
+        $this->configure();
+        if ($binder = $this->getBound($className)) {
+            $builder = $binder->getBuilder();
+
+        }
+
+        throw new \Exception("Class: $className has not been bound");
     }
 
     /**
@@ -95,15 +117,18 @@ class Factory
      */
     public function make($class)
     {
-        if (!$this->_configured) {
-            $this->_module->configure($this);
-            $this->_configured = true;
-        }
-
+        $this->configure();
         if ($binder = $this->getBound($class)) {
-            return $binder->build();
+            return $binder->builder()->build();
         }
 
-        throw new \InvalidArgumentException("Class: $class has not been bound");
+        throw new \Exception("Class: $class has not been bound");
+    }
+
+    private function configure()
+    {
+        if ($this->_configured) return;
+        $this->_module->configure($this);
+        $this->_configured = true;
     }
 }

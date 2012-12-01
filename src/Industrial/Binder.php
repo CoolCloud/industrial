@@ -28,6 +28,8 @@
  */
 namespace Industrial;
 
+use Industrial\Build\Action;
+
 /**
  * Binder.
  *
@@ -41,109 +43,107 @@ namespace Industrial;
 class Binder
 {
     /**
+     * @var \Industrial\Factory
+     */
+    private $_factory = null;
+
+    /**
      * @var string
      */
     private $_className = null;
 
     /**
-     * @var \ReflectionClass
-     */
-    private $_abstReflection = null;
-
-    /**
-     * @var \ReflectionClass
-     */
-    private $_implReflection = null;
-
-    /**
-     * @var callback
-     */
-    private $_callback = null;
-
-    /** 
      * @var array
      */
-    private $_constructArgs = null;
+    private $_actions = array();
 
     /**
-     * @var array
+     * @var \Industrial\IScope
      */
-    private $_methods = array();
+    private $_scope = null;
 
     /**
-     * Static access to the constructor for chaining.
-     *
-     * @param string $className
+     * @var \Industrial\Build\Builder
      */
-    public static function bind($className) 
-    {
-        return new self($className);
-    }
+    private $_builder = null;
+
+    /**
+     * @var boolean
+     */
+    private $_finalized = false;
 
     /**
      * Constuctor.
      *
+     * @param \Industrial\Factory $factory
+     */
+    public function __construct(Factory $factory) 
+    {
+        $this->_factory = $factory;
+        $this->_scope = new Scope\Transient();
+    }
+
+    /**
+     * Initial binding.
      * @param string $className
      */
-    public function __construct($className) 
+    public function bind ($className)
     {
         if (!class_exists($className) && !interface_exists($className)) 
-            throw new \InvalidArgumentException("Class or Interface: "  
+            throw new Exception("Class or Interface: "  
             . "$className does not exist or could not be found");
 
         $this->_className = $className;
 
-        $reflection = new \ReflectionClass($className);
-        if ($reflection->isAbstract() || $reflection->isInterface()) {
-            $this->_abstReflection = $reflection;
-        } else {
-            $this->_implReflection = $reflection;
-        }
+        $this->addAction(Action::Bind($className));
+        return $this;
     }
 
     /**
      * Binds a concrete implementation of an abstract or interface that
      * was provided during __construct()
      *
-     * @param string $className Concrete implementation of abstract class
+     * @param string|object $className Concrete implementation of abstract class
      * @return \Industrial\Binder Provide Fluent Interface
      */
     public function to($className)
     {
-        if ($this->_implReflection && !$this->_abstReflection)
-            $this->_abstReflection = $this->_implReflection;
-
-        $this->_implReflection = new \ReflectionClass($className);
-
-        if (!($this->_implReflection->isSubclassOf(
-                $this->_abstReflection->name))) 
-            throw new \InvalidArgumentException(sprintf("%s does not extend " 
-                . "or implement %s", $className, $this->_abstReflection->name));
-        
+        $this->addAction(Action::To($className));
         return $this;
     }
 
     /**
-     * Provide a callback to build the bound object. If constructor arguments
-     * are also provided the constructor will be called first, then passed to 
-     * the callback. 
-     *
-     * @param callback $callback
-     * @param boolean $constructFirst Force calling empty constructor if no 
-     *  constructor arguments are provided
+     * Bind a concrete class to itself
      * @return \Industrial\Binder Provide Fluent Interface
      */
-    public function using($callback, $constructFirst = false)
+    public function toSelf()
     {
-        if ($this->_constructorArgs) 
-            throw new \BadMethodCallException("Only one of construct() or "
-                . "using() may be used.");
+        $this->addAction(Action::To($this->_className));
+        return $this;
+    }
 
-        if (!is_callable($callback))
-            throw new \BadMethodCallException("Callback must be a callable "
-                . "function");
+    /**
+     * Bind a class to an instanted object, enforces Singleton Scope
+     * @return \Industrial\Binder Provide fluent interface
+     */
+    public function toObject(\stdClass $obj)
+    {
+        $this->inSingletonScope();
+        $action = Action::To($obj);
+        $action->isFinal(true);
+        $this->addAction(Action::To($obj));
+        return $this;
+    }
 
-        $this->_callback = $callback;
+    /**
+     * Provide a callback to build the bound object.
+     *
+     * @param callback $callback
+     * @return \Industrial\Binder Provide Fluent Interface
+     */
+    public function using($callback)
+    {
+        $this->addAction(Action::Using($this->_className));
         return $this;
     }
 
@@ -154,12 +154,26 @@ class Binder
      */
     public function construct(array $args = null)
     {
-        if ($this->_callback) 
-            throw new \BadMethodCallException("Only one of construct() or "
-                . "using() may be used.");
+        $this->addAction(Action::Construct($args));
+        return $this;
+    }
 
-        $this->checkArguments($this->_implReflection->getConstructor(), $args);
-        $this->_constructArgs = $args;
+    /**
+     * Provide a scope object to maintain scoped injections
+     * @param \Industrial\IScope Scope
+     * @return \Industrial\Binder Provide Fluent Interface
+     */
+    public function inScope(IScope $scope)
+    {
+        return $this;
+    }
+
+    /**
+     * Use the built in singleton scope to manage singleton objects
+     * @return \Industrial\Binder Provide Fluent Interface
+     */
+    public function inSingletonScope()
+    {
         return $this;
     }
 
@@ -170,6 +184,8 @@ class Binder
      */
     public function __call($method, array $args)
     {
+        $this->addAction(Action::Method($method, $args));
+        /*
         try {
             $refl_method = $this->_implReflection->getMethod($method);
             if (!$refl_method->isPublic())
@@ -186,6 +202,7 @@ class Binder
         }
 
         $this->_methods[] = array($method,$args);
+         */
         return $this;
     }
 
@@ -204,31 +221,96 @@ class Binder
      * Instantiate and initialize the bound class according to the given rules
      * @return 
      */
-    public function build()
+    public function builder()
     {
-        if (!$this->_implReflection) 
-            throw new \BadMethodCallException(sprintf("No implementation "
-                . "of abstract class or interface %s could be found",
-                $this->_abstReflection->name));
+        $this->finalize();
+        return clone $this->_builder;
+    }
 
-        if ($this->_callback) {
-            $obj = $this->_callback();
-            if (!($obj instanceof $this->__className)) 
-                throw new \InvalidArgumentException(sprintf("Callback must "
-                    . "provide an instance of %s", $this->_className));
+    /**
+     * Called by the factory during initialization 
+     */
+    public function finalize()
+    {
+        if ($this->_finalized) return;
+
+        $builder = new Build\Builder($this->_factory);
+        $priority = Action::getFirstPriority();
+        do {
+            if ($action = $this->getAction($priority)) {
+                if (is_array($action)) {
+                    foreach ($action as $act) {
+                        $builder->addAction($act);
+                    }
+                } else {
+                    $builder->addAction($action);
+                }
+            }
+        } while ($priority = Action::getNextPriority($priority));
+
+        // Run single build to check sanity at bind time
+        // TODO This smells a little bit. Fix it.
+        $builder->build();
+        
+        $this->_builder = $builder;
+    }
+
+    private function checkExclusive(Action\IAction $action)
+    {
+        array_walk ($this->_actions, function ($item) use ($action) {
+            if (is_array($item))
+                $item = $item[0];
+
+            if (Action::areExclusive($item,$action)) {
+                throw new Exception("Cannot use both " . $action->getName() . 
+                    " and " . $action->getName());
+            }
+        });
+    }
+
+    private function addMultipleAction(Action\IAction $action)
+    {
+        if (!isset($this->_actions[$action->getName()])) {
+            $this->_actions[$action->getName()] = array();
+        }
+        
+        $this->_actions[$action->getName()][] = $action;
+    }
+
+    /**
+     * @param string $priority
+     */
+    private function getAction($priority)
+    {
+        if (isset($this->_actions[$priority])) {
+            return $this->_actions[$priority];
+        }
+    }
+
+    /**
+     * @param \Industrial\Build\Action\IAction $action
+     */
+    public function addAction(Action\IAction $action)
+    {
+        if ($this->_finalized) {
+            throw new Exception("Expression has been finalized.");
         }
 
-        if ($this->_constructArgs) {
-            $obj = $this->_implReflection->newInstanceArgs($this->_constructArgs);
+        $this->checkExclusive($action);
+
+        if ($action->isMultiple()) {
+            $this->addMultipleAction($action);
         } else {
-            $obj = $this->_implReflection->newInstance();
+            if (isset($this->_actions[$action->getName()])) {
+                throw new Exception("Cannot add multiple actions of type " . $action->getName());
+            } else {
+                $this->_actions[$action->getName()] = $action;
+            }
         }
 
-        foreach ($this->_methods as $method) {
-            call_user_func_array(array($obj,$method[0]),$method[1]);
+        if ($action->isFinal()) {
+            $this->_finalized = true;
         }
-
-        return $obj;
     }
 
     /**

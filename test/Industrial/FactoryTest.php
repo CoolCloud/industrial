@@ -1,8 +1,6 @@
 <?php
 
-require_once "src/Industrial/Module.php";
-require_once "src/Industrial/Binder.php";
-require_once "src/Industrial/Factory.php";
+require_once "test/Autoload.php";
 
 class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
 {
@@ -16,18 +14,40 @@ class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
     public function testBindClassAfter()
     {
         $factory = new \Industrial\Factory(new TestModule);
-        $factory->addBound(new \Industrial\Binder(FactoryTestClass2::$class));
+
+        $binder = new \Industrial\Binder($factory);
+        $binder->bind(FactoryTestClass2::$class)->toSelf();
+        $factory->addBound($binder);
+
         $obj = $factory->make(FactoryTestClass2::$class);
         $this->assertTrue($obj instanceof FactoryTestClass2::$class, "Failed to create class");
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException Exception
      */
     public function testNoClass()
     {
         $factory = new \Industrial\Factory(new TestModule);
         $factory->make("NotAClass");
+    }
+
+    public function testJustInTimeBinding()
+    {
+        $factory = new \Industrial\Factory(new TestModule);
+
+        $binder = new \Industrial\Binder($factory);
+        $binder->bind(JITArgument::$class)->toSelf();
+        $factory->addBound($binder);
+
+        $binder = new \Industrial\Binder($factory);
+        $binder->bind(JITBinder::$class)->toSelf();
+        $factory->addBound($binder);
+
+        $jit = $factory->make(JITBinder::$class);
+
+        $this->assertTrue($jit instanceof JITBinder);
+        $this->assertTrue($jit->argument instanceof JITArgument);
     }
 }
 
@@ -35,7 +55,9 @@ class TestModule extends \Industrial\Module
 {
     protected function config()
     {
-        $this->bind(FactoryTestClass1::$class);
+        $this->bind(FactoryTestClass1::$class)->toSelf();
+        $this->bind(JITBinder::$class)->toSelf();
+        $this->bind(JITArgument::$class)->toSelf();
     }
 }
 
@@ -47,4 +69,21 @@ class FactoryTestClass1
 class FactoryTestClass2
 {
     public static $class = "FactoryTestClass2";
+}
+
+class JITBinder 
+{
+    public static $class = "JITBinder";
+
+    public $argument;
+
+    public function __construct(JITArgument $argument)
+    {
+        $this->argument = $argument;
+    }
+}
+
+class JITArgument
+{
+    public static $class = "JITArgument";
 }

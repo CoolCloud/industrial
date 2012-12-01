@@ -23,65 +23,73 @@
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.2
- * @since 0.1
+ * @version 0.2.0
+ * @since 0.2
  */
-namespace Industrial;
+namespace Industrial\Build\Action;
+
+use Industrial\Build;
+use Industrial\Reflect;
+use Industrial\Inject;
 
 /**
- * Abstract module.
+ * Using Action
  *
  * @package pihi/industrial
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.1
- * @since 0.1
+ * @version 0.2.0
+ * @since 0.2
  */
-abstract class Module
+class Method implements IAction
 {
-    /**
-     * Factory instance. Will be set only during the scope of the call 
-     * to configure()
-     *
-     * @var \Industrial\Factory
-     */
-    private $_factory = null;
+    const Name = "Method";
 
-    /**
-     * Create a binder for the given class name and add it to the factory
-     * 
-     * @param string $class
-     * @uses \Industrial\Factory::addBound()
-     * @return \Industrial\Binder
-     * @throws \Exception
-     * @final 
-     */
-    protected final function bind($class)
+    private $_final;
+
+    private $_method;
+
+    private $_args;
+
+    private $_callback;
+
+    public static function getName()
     {
-        if (!$this->_factory)
-            throw new \Exception("bind must only be call from within the config() method");
-
-        $bound = new Binder($this->_factory);
-        $bound->bind($class);
-        $this->_factory->addBound($bound);
-        return $bound;
+        return self::Name;
     }
 
-    /**
-     * Configure module.
-     * @param \Industrial\Factory
-     */
-    public final function configure(Factory $factory) 
+    public function __construct ($method, $args)
     {
-        $this->_factory = $factory;
-        $this->config();
-        $this->_factory = null;
+        $this->_method = $method;
+        $this->_args = $args;
     }
 
-    /**
-     * Provided for module configuration.
-     * @abstract
-     */
-    abstract protected function config();
+    public static function isMultiple()
+    {
+        return true;
+    }
+
+    public function isFinal($final = null)
+    {
+        if (null !== $final) {
+            $this->_final = $final;
+        }
+
+        return $this->_final;
+    }
+
+    public function getProcessor()
+    {
+        $method = $this->_method;
+        $args = $this->_args;
+        return function ($factory, &$obj) use ($method, $args) {
+            $callable = array($obj, $method);
+            if (!is_callable($callable)) 
+                throw new Exception("Cannot call bound method: " . $method . " on class: " . get_class($obj));
+
+            call_user_func_array($callable, $args);
+        };
+    }
 }
+
