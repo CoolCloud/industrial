@@ -47,14 +47,16 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException BadMethodCallException
+     * @expectedException Exception
      */
     public function testTypedConstructorArguments2()
     {
         $binder = new \Industrial\Binder($this->getMockFactory());
         $binder->bind(BinderTestClass2::$class);
         $binder->construct(array("String"));
+        $binder->finalize();
     }
+
 
     public function testTypedConstructerArguments3()
     {
@@ -66,23 +68,25 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException BadMethodCallException
+     * @expectedException Exception
      */
     public function testTypedConstructorArguments4()
     {
         $binder = new \Industrial\Binder($this->getMockFactory());
         $binder->bind(BinderTestClass3::$class);
         $binder->construct(array("String"));
+        $binder->finalize();
     }
 
     /**
-     * @expectedException BadMethodCallException
+     * @expectedException Exception
      */
     public function testCountedConstructorArguments()
     {
         $binder = new \Industrial\Binder($this->getMockFactory());
         $binder->bind(BinderTestClass3::$class);
         $binder->construct(array());
+        $binder->finalize();
     }
 
     public function testMethodArguments()
@@ -112,7 +116,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     }
     
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException Exception
      */
     public function testInterfaceBindingWithoutImplementedInterface()
     {
@@ -134,7 +138,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     }
     
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException Exception
      */
     public function testAbstractBindingWithoutExtendedClass()
     {
@@ -145,12 +149,12 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException BadMethodCallException
+     * @expectedException Exception
      */
     public function testBuildAbstractBoundClass()
     {
-        $binder = \Industrial\Binder::bind($this->getMockFactory());
-        $binder->bind(BinderTestAbstract1::$class)->toSelf();
+        $binder = new \Industrial\Binder($this->getMockFactory());
+        $binder->bind(BinderTestAbstract1::$class)->to();
         $binder->builder()->build();
     } 
 }

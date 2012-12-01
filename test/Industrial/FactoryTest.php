@@ -24,12 +24,30 @@ class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException Exception
      */
     public function testNoClass()
     {
         $factory = new \Industrial\Factory(new TestModule);
         $factory->make("NotAClass");
+    }
+
+    public function testJustInTimeBinding()
+    {
+        $factory = new \Industrial\Factory(new TestModule);
+
+        $binder = new \Industrial\Binder($factory);
+        $binder->bind(JITArgument::$class)->toSelf();
+        $factory->addBound($binder);
+
+        $binder = new \Industrial\Binder($factory);
+        $binder->bind(JITBinder::$class)->toSelf();
+        $factory->addBound($binder);
+
+        $jit = $factory->make(JITBinder::$class);
+
+        $this->assertTrue($jit instanceof JITBinder);
+        $this->assertTrue($jit->argument instanceof JITArgument);
     }
 }
 
@@ -38,6 +56,8 @@ class TestModule extends \Industrial\Module
     protected function config()
     {
         $this->bind(FactoryTestClass1::$class)->toSelf();
+        $this->bind(JITBinder::$class)->toSelf();
+        $this->bind(JITArgument::$class)->toSelf();
     }
 }
 
@@ -49,4 +69,21 @@ class FactoryTestClass1
 class FactoryTestClass2
 {
     public static $class = "FactoryTestClass2";
+}
+
+class JITBinder 
+{
+    public static $class = "JITBinder";
+
+    public $argument;
+
+    public function __construct(JITArgument $argument)
+    {
+        $this->argument = $argument;
+    }
+}
+
+class JITArgument
+{
+    public static $class = "JITArgument";
 }

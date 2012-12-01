@@ -1,19 +1,21 @@
 <?php 
 
+use \Industrial\Build\Action;
+
 require_once "test/Autoload.php";
 
 class Industrial_Build_ActionTest extends PHPUnit_Framework_TestCase
 {
-    public function callStaticTest()
+    public function testCallStatic()
     {
         $action = Action::Bind("ActionTestA");
         $this->assertTrue($action instanceof \Industrial\Build\Action\Bind);
     }
 
     /**
-     * @expectedException \Industrial\Build\Action\Exception
+     * @expectedException Exception
      */
-    public function callStaticTestThrow()
+    public function testCallStaticThrow()
     {
         $action = Action::Blind("ActionTestA");
     }
