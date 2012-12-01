@@ -56,6 +56,9 @@ class Constructor
      */
     public function construct(\ReflectionClass $refl)
     {
+        if ($refl->isAbstract() || $refl->isInterface())
+            throw new Exception ("Cannot construct");
+
         if ($constr = $refl->getConstructor()) {
             $params = $constr->getParameters();
 
