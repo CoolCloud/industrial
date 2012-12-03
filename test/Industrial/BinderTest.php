@@ -55,6 +55,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
         $binder->bind(BinderTestClass2::$class);
         $binder->construct(array("String"));
         $binder->finalize();
+        $binder->builder()->build();
     }
 
 
@@ -76,6 +77,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
         $binder->bind(BinderTestClass3::$class);
         $binder->construct(array("String"));
         $binder->finalize();
+        $binder->builder()->build();
     }
 
     /**
@@ -87,6 +89,7 @@ class Industrial_BinderTest extends PHPUnit_Framework_TestCase
         $binder->bind(BinderTestClass3::$class);
         $binder->construct(array());
         $binder->finalize();
+        $binder->builder()->build();
     }
 
     public function testMethodArguments()

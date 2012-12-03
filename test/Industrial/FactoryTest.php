@@ -67,6 +67,16 @@ class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($jit->arg2, 'value');
         $this->assertEquals($jit->arg3, 'value2');
     }
+
+    public function testMultiModuleFactory()
+    {
+        $factory = new \Industrial\Factory(
+            new TestModule, new TestModuleTwo);
+
+        $obj = $factory->make(NamedBinder::$class, "n3");
+        $this->assertTrue($obj instanceof NamedBinder);
+        $this->assertEquals("n3",$obj->name);
+    }
 }
 
 class TestModule extends \Industrial\Module
@@ -81,6 +91,15 @@ class TestModule extends \Industrial\Module
         $this->bind(NamedBinder::$class)->named("n2")
             ->toSelf()->method("setName",array("n2"));
         $this->bind(JITParamBinder::$class)->toSelf();
+    }
+}
+
+class TestModuleTwo extends \Industrial\Module
+{
+    protected function config()
+    {
+        $this->bind(NamedBinder::$class)->named("n3")
+            ->toSelf()->method("setName", array("n3"));
     }
 }
 

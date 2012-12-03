@@ -47,9 +47,9 @@ class Factory
     private $_bound = array();
 
     /**
-     * @var \Industrial\Module
+     * @var array
      */
-    private $_module = null;
+    private $_modules = array();
 
     /**
      * @var boolean
@@ -65,9 +65,26 @@ class Factory
      * Constructor
      * @param \Industrial\Module
      */
-    public function __construct(Module $module)
+    public function __construct()
     {
-        $this->_module = $module;
+        $modules = func_get_args();
+        foreach ($modules as $module) {
+            if (!($module instanceof \Industrial\Module)) 
+                throw new Exception("Modules must be of type: \\Industrial\\Module");
+
+            $this->_modules[] = $module;
+        }
+    }
+
+    /**
+     *
+     */
+    public function addModule(\Industrial\Module $module)
+    {
+        if ($this->_configured)
+            throw new Exception("Factory already configured");
+
+        $this->_modules[] = $module;
     }
 
     /**
@@ -123,7 +140,6 @@ class Factory
         $this->configure();
 
         if ($binder = $this->getBound($class, $name)) {
-            var_dump($class,$this->_params);
             $obj =  $binder->builder()->build($this->_params);
             $this->_params = array();
             return $obj;
@@ -135,7 +151,9 @@ class Factory
     private function configure()
     {
         if ($this->_configured) return;
-        $this->_module->configure($this);
+        foreach ($this->_modules as $module) {
+            $module->configure($this);
+        }
         $this->_configured = true;
     }
 }
