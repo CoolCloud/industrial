@@ -42,52 +42,69 @@ class Constructor
 {
     private $_factory;
 
+    private $_reflection;
+
     /**
      * @param \Industrial\Factory $factory
      */
-    public function __construct(\Industrial\Factory $factory)
+    public function __construct(\Industrial\Factory $factory, \ReflectionClass $refl)
     {
         $this->_factory = $factory;
+        $this->_reflection = $refl;
+
+        if ($this->_reflection->isAbstract() || $this->_reflection->isInterface())
+            throw new Exception ("Cannot construct");
     }
 
     /**
      * Construct an object by injecting available parameters
      * @param \ReflectionClass $refl
      */
-    public function construct(\ReflectionClass $refl)
+    public function construct(array $args = null)
     {
-        if ($refl->isAbstract() || $refl->isInterface())
-            throw new Exception ("Cannot construct");
-
-        if ($constr = $refl->getConstructor()) {
+        if ($constr = $this->_reflection->getConstructor()) {
             $params = $constr->getParameters();
-
-            $inj_params = array();
-            foreach ($params as $param) {
-                if (null === ($pc = $param->getClass())) {
-                    if ($param->isArray())
-                        throw new Exception("Injection does not support array arguments");
-                    if (!$param->isDefaultValueAvailable())
-                        throw new Exception("Cannot inject not-typed argument without default value");
-                    $inj_params[] = $param->getDefaultValue();
-                } else {
-                    try {
-                        $obj = $this->_factory->make($pc->name);
-                    } catch (\Exception $e) {
-                        throw new Exception("Caught Exception while injecting constructor parameter", 0, $e);
-                    }
-                    $inj_params[] = $obj;
-                }
-            }
-
-            return $refl->newInstanceArgs($inj_params);
+            $inj_params = $this->getConstructorArguments($params, $args);
+            return $this->_reflection->newInstanceArgs($inj_params);
         }
 
-        return $refl->newInstanceWithoutConstructor();
+        return $this->_reflection->newInstanceWithoutConstructor();
     }
 
-    public function properties()
+    private function getConstructorArguments ($params, array $args = null)
     {
+        if ($args === null) $args = array();
+        $inj_params = array();
+
+        foreach ($params as $param) {
+            if (array_key_exists($param->getName(), $args)) {
+                $inj_params[] = $args[$param->getName()];
+                continue;
+            }
+
+            if (null === ($pc = $param->getClass())) {
+                if ($param->isDefaultValueAvailable()) {
+                    $inj_params[] = $param->getDefaultValue();
+                    continue;
+                }
+            } else {
+                $inj_params[] = $this->getInjectableClass($pc->name);
+                continue;
+            }
+
+            throw new Exception("Could not inject parameter: " . $param->getName() . " in class: " . $this->_reflection->name . "\n");
+        }
+
+        return $inj_params;
+    }
+
+    private function getInjectableClass($class)
+    {
+        try {
+            return $this->_factory->make($class);
+        } catch (\Exception $e) {
+            throw new Exception("Caught Exception while injecting constructor parameter", 0, $e);
+        }
     }
 }
 

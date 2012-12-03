@@ -91,7 +91,7 @@ class To implements IAction
     {
         $refl = $this->_reflection;
         $objc = $this->_object;
-        return function ($factory, \ReflectionClass &$obj) use ($refl,$objc) {
+        return function ($factory, \ReflectionClass &$obj, $params) use ($refl,$objc) {
             if ($objc) {
                 if (!$obj->isSubclassOf($objc))
                     throw new \Exception(get_class($objc) . " does not implement or extend " . $obj->name);
@@ -101,10 +101,8 @@ class To implements IAction
                     !($refl->isSubclassOf($obj->name))) 
                     throw new \Exception($refl->name . " does not implement or extend " . $obj->name);
 
-
-                $injc = new Inject\Constructor($factory);
-                $obj = $injc->construct($refl);
-                $injc->properties($obj);
+                $injc = new Inject\Constructor($factory,$refl);
+                $obj = $injc->construct($params);
             }
         };
     }

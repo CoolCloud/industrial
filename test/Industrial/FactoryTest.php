@@ -36,18 +36,36 @@ class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
     {
         $factory = new \Industrial\Factory(new TestModule);
 
-        $binder = new \Industrial\Binder($factory);
-        $binder->bind(JITArgument::$class)->toSelf();
-        $factory->addBound($binder);
-
-        $binder = new \Industrial\Binder($factory);
-        $binder->bind(JITBinder::$class)->toSelf();
-        $factory->addBound($binder);
-
         $jit = $factory->make(JITBinder::$class);
 
         $this->assertTrue($jit instanceof JITBinder);
         $this->assertTrue($jit->argument instanceof JITArgument);
+    }
+
+    public function testNamedBinding()
+    {
+        $factory = new \Industrial\Factory(new TestModule);
+
+        $n1 = $factory->make(NamedBinder::$class, "n1");
+        $n2 = $factory->make(NamedBinder::$class, "n2");
+
+        $this->assertEquals("n1",$n1->name);
+        $this->assertEquals("n2",$n2->name);
+    }
+
+    public function testJITBuildTimeParameter()
+    {
+        $factory = new \Industrial\Factory(new TestModule);
+
+        $jit = $factory->with('arg2', 'value')->make(JITParamBinder::$class);
+        $this->assertTrue($jit->arg1 instanceof JITArgument);
+        $this->assertEquals($jit->arg2, 'value');
+        $this->assertEquals($jit->arg3, 'default');
+
+        $jit = $factory->with(array('arg2'=>'value', 'arg3'=>'value2'))->make(JITParamBinder::$class);
+        $this->assertTrue($jit->arg1 instanceof JITArgument);
+        $this->assertEquals($jit->arg2, 'value');
+        $this->assertEquals($jit->arg3, 'value2');
     }
 }
 
@@ -58,6 +76,11 @@ class TestModule extends \Industrial\Module
         $this->bind(FactoryTestClass1::$class)->toSelf();
         $this->bind(JITBinder::$class)->toSelf();
         $this->bind(JITArgument::$class)->toSelf();
+        $this->bind(NamedBinder::$class)->named("n1")
+            ->toSelf()->method("setName",array("n1"));
+        $this->bind(NamedBinder::$class)->named("n2")
+            ->toSelf()->method("setName",array("n2"));
+        $this->bind(JITParamBinder::$class)->toSelf();
     }
 }
 
@@ -86,4 +109,34 @@ class JITBinder
 class JITArgument
 {
     public static $class = "JITArgument";
+}
+
+class JITParamBinder
+{
+    public static $class = "JITParamBinder";
+
+    public $arg1;
+
+    public $arg2;
+
+    public $arg3;
+
+    public function __construct(JITArgument $arg1, $arg2, $arg3 = 'default')
+    {
+        $this->arg1 = $arg1;
+        $this->arg2 = $arg2;
+        $this->arg3 = $arg3;
+    }
+}
+
+class NamedBinder
+{
+    public static $class = "NamedBinder";
+
+    public $name;
+
+    public function setName($name) 
+    {
+        $this->name = $name;
+    }
 }

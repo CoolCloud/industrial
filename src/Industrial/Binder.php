@@ -58,6 +58,11 @@ class Binder
     private $_actions = array();
 
     /**
+     * @var string
+     */
+    private $_name = null;
+
+    /**
      * @var \Industrial\IScope
      */
     private $_scope = null;
@@ -86,8 +91,10 @@ class Binder
     /**
      * Initial binding.
      * @param string $className
+     * @param string $name
+     * @return \Industrial\Binder Provide fluent interface
      */
-    public function bind ($className)
+    public function bind ($className, $name = null)
     {
         if (!class_exists($className) && !interface_exists($className)) 
             throw new Exception("Class or Interface: "  
@@ -96,6 +103,18 @@ class Binder
         $this->_className = $className;
 
         $this->addAction(Action::Bind($className));
+        $this->_name = $name;
+        return $this;
+    }
+
+    /**
+     * Name this binding
+     * @param string $name
+     * @return \Industrial\Binder Provide fluent interface
+     */
+    public function named ($name)
+    {
+        $this->_name = $name;
         return $this;
     }
 
@@ -177,6 +196,11 @@ class Binder
         return $this;
     }
 
+    public function method($method, array $args = null)
+    {
+        return $this->__call($method, $args);
+    }
+
     /**
      * Used to set a chain of methods to call during the instantiation of 
      * the bound class
@@ -185,36 +209,21 @@ class Binder
     public function __call($method, array $args)
     {
         $this->addAction(Action::Method($method, $args));
-        /*
-        try {
-            $refl_method = $this->_implReflection->getMethod($method);
-            if (!$refl_method->isPublic())
-                throw new \InvalidArgumentException(sprintf("%s::%s() is not "
-                    . "publicly visible", $this->_className, $method));
-            $this->checkArguments($refl_method, $args);
-        } catch (\ReflectionException $e) {
-            if (!$this->_implReflection->hasMethod("__call")) 
-                throw new \InvalidArgumentException(sprintf("%s::%s() does not "
-                    . "exist or cannot be called",$this->_className, $method));
-
-            $args = array($method, $args);
-            $method = "__call";
-        }
-
-        $this->_methods[] = array($method,$args);
-         */
         return $this;
     }
 
     /** 
      * Check if the bound class is the given class
      * @param string $class
+     * @param string $name
      * @return boolean
      */
-    public function is($class)
+    public function is($class, $name = null)
     {
-        if (is_object($class)) return ($class instanceof $this->_className);
-        return ($this->_className == $class);
+        if (is_object($class)) 
+            return ($class instanceof $this->_className && $this->_name == $name);
+
+        return ($this->_className == $class && $this->_name == $name);
     }
 
     /**
@@ -250,7 +259,9 @@ class Binder
 
         // Run single build to check sanity at bind time
         // TODO This smells a little bit. Fix it.
-        $builder->build();
+        // This smelly code broke my tests. Introduce a new
+        // way to do sanity checks.
+        // $builder->build(array());
         
         $this->_builder = $builder;
     }

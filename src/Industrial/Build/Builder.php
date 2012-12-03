@@ -23,8 +23,8 @@
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.2
- * @since 0.1
+ * @version 0.3.0
+ * @since 0.2
  */
 namespace Industrial\Build;
 
@@ -35,16 +35,14 @@ namespace Industrial\Build;
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.2.0
- * @since 0.1
+ * @version 0.3.0
+ * @since 0.2
  */
 class Builder
 {
     private $_factory;
 
     private $_process = array();
-
-    private $_params = array();
 
     public function __construct (\Industrial\Factory $factory)
     {
@@ -54,7 +52,11 @@ class Builder
     public function __clone ()
     {
         $process = array();
-        foreach ($this->_process as $proc) $process[] = $proc;
+
+        foreach ($this->_process as $proc) {
+            $process[] = $proc;
+        }
+
         $this->_process = $process;
     }
 
@@ -68,26 +70,14 @@ class Builder
     }
 
     /**
-     * Provide arguments to be passed to Injector
-     * @param string $param Name of constructor parameter
-     * @param mixed $value Value to be passed
-     * @return \Industrial\Build\Builder Provide fluent interface
-     */
-    public function with($param, $value)
-    {
-        $this->_params[$name] = $value;
-        return $this;
-    }
-
-    /**
      * @param \Industrial\Factory $factory
      * @return object
      */
-    public function build()
+    public function build(array $params = null)
     {
         $obj = null;
         foreach ($this->_process as $process) {
-            $process($this->_factory,$obj);
+            $process($this->_factory,$obj,$params);
         }
         return $obj;
     }

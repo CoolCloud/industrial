@@ -57,18 +57,17 @@ class Factory
     private $_configured = false;
 
     /**
+     * @var array
+     */
+    private $_params = array();
+
+    /**
      * Constructor
      * @param \Industrial\Module
      */
     public function __construct(Module $module)
     {
         $this->_module = $module;
-
-        /*
-        $selfBinder = new Binder($this);
-        $selfBinder->bind(get_class($this))
-            ->toObject($this);
-         */
     }
 
     /**
@@ -86,27 +85,31 @@ class Factory
      * @param string $className
      * @return \Industrial\Binder
      */
-    public function getBound($className) 
+    public function getBound($className, $name = null) 
     {
         $this->configure();
         foreach ($this->_bound as $bound) {
-            if ($bound->is($className)) 
+            if ($bound->is($className, $name)) 
                 return $bound;
         }
     }
 
     /**
-     *
+     * Add parameters to be passed to constructor on build
+     * @param string|array $param
+     * @param mixed $value
+     * @return \Industrial\Factory Provide a fluent interface
+     * @since 0.3
      */
-    public function builder($className)
+    public function with($param, $value = null)
     {
-        $this->configure();
-        if ($binder = $this->getBound($className)) {
-            $builder = $binder->getBuilder();
-
+        if (is_array($param)) {
+            $this->_params = array_merge($this->_params, $param);
+        } else {
+            $this->_params[$param] = $value;
         }
 
-        throw new \Exception("Class: $className has not been bound");
+        return $this;
     }
 
     /**
@@ -115,11 +118,15 @@ class Factory
      * @return mixed
      * @throws \InvalidArgumentException
      */
-    public function make($class)
+    public function make($class, $name = null)
     {
         $this->configure();
-        if ($binder = $this->getBound($class)) {
-            return $binder->builder()->build();
+
+        if ($binder = $this->getBound($class, $name)) {
+            var_dump($class,$this->_params);
+            $obj =  $binder->builder()->build($this->_params);
+            $this->_params = array();
+            return $obj;
         }
 
         throw new \Exception("Class: $class has not been bound");
