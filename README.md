@@ -20,62 +20,80 @@ practices at http://getcomposer.org/doc/00-intro.md
 
 Basic Usage
 -----------
+Setting up modules:
+
 ```php
 <?php
 
-class TestClass
-{
-    public static $class = 'TestClass';
-
-    public function __construct($one, $two)
-    {
-        print "Constructing TestClass:\n";
-        print "First Argument: $one\n";
-        print "Second Argument: $two\n";
-    }
-
-    public function method($arg)
-    {
-        print "Called TestClass::method()\n";
-        print "Argument: $arg\n";
-    }
-}
-
-class Module extends \Industrial\Module
+/**
+ * A Module should will releated bindings
+ */
+class PaymentModule extends \Industrial\Module
 {
     protected function config()                
     {
-        $this->bind(TestClass::$class)          // Create an \Industrial\Binder for \TestClass
-             ->construct(array("one","two"))    // Apply these parameters to the constructor
-             ->method("argument");              // After __construct() call method("argument")
-
-        $this->bind(TestClass::$class)          // Create an \Industrial\Binder for \TestClass
-             ->using(function(){                // Use a callback to instantiate object
-                    return new TestClass();     //
-               })->method("argument");          // Call method("argument") 
-
-        $this->bind(TestClass::$class)          // Accomplishes the same as above
-             ->using(function(){                //
-                    $obj = new TestClass();     //
-                    $obj->method("argument");   //
-                    return $obj;                //
-               });                              //
-        
-        $this->bind(TestClass::$class)          // Accomplishes the same as above
-             ->using(array(                     // 
-                $this,'initTestClass'));        //
-    }
-
-    public function initTestClass() {
-        $obj = new TestClass();
-        $obj->method("argument");
-        return $obj;
+        $this->bind('ITaxCalculator')->to('OklahomaStateSalesTax');
+        $this->bind('IPaymentProcessor')->to('PayPalProcessor');
     }
 }
 
-$di = new \Industrial\Factory(new Module());
-$testobj = $di->make(TestClass::$class);
+/**
+ * Use named bindings to bind the same interface multiple times
+ */
+class ShippingModule extends \Industrial\Module
+{
+    protected function config()
+    {
+        $this->bind('IShippingCalculator')
+            ->to('FedExShippingCalculator')->named('FedEx');
 
+        $this->bind('IShippingCalculator')
+            ->to('UPSShippingCalculator')->named('UPS');
+
+        $this->bind('IShippingCalculator')
+            ->to('USPSShippingCalculator')->named('USPS');
+    }
+}
+
+/**
+ * Call using() to provide a method which constructs the bound object
+ */
+class CartModule extends \Industrial\Module
+{
+    protected function config()
+    {
+        $factory = $this->factory;
+        $this->bind('ShoppingCart')->using(
+            function () use ($factory) {
+                $request = $factory->make('Request');
+                return $request->getUser()->getShoppingCart();
+            });
+    }
+}
 ?>
 ```
+
+Instantiate and use factory:
+```php
+<?php
+    
+$factory = new \Industrial\Factory(
+    new CartModule,
+    new ShippingModule,
+    new PaymentModule);
+
+
+// Create an object using a binding
+$taxCalculator = $factory->make('ITaxCalculator');
+
+// Create an object using a named binding
+$shippingCalculator = $factory->make('IShippingCalculator', 'FedEx');
+
+// Use with to provide constructor arguments that won't be provided by 
+// Just-In-Time bindings
+$paymentProcessor = $factory->with(array('apikey'=>'paypal_api_key'))
+                            ->make('IPaymentProcessor');
+?>
+```
+
 

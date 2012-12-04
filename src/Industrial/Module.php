@@ -46,7 +46,7 @@ abstract class Module
      *
      * @var \Industrial\Factory
      */
-    private $_factory = null;
+    protected $factory = null;
 
     /**
      * Create a binder for the given class name and add it to the factory
@@ -74,9 +74,9 @@ abstract class Module
      */
     public final function configure(Factory $factory) 
     {
-        $this->_factory = $factory;
+        $this->factory = $factory;
         $this->config();
-        $this->_factory = null;
+        $this->factory = null;
     }
 
     /**
