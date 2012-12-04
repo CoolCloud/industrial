@@ -89,8 +89,8 @@ $taxCalculator = $factory->make('ITaxCalculator');
 // Create an object using a named binding
 $shippingCalculator = $factory->make('IShippingCalculator', 'FedEx');
 
-// Use with to provide constructor arguments that won't be provided by 
-// Just-In-Time bindings
+// Use with() to provide constructor arguments that won't be provided by 
+// injection bindings
 $paymentProcessor = $factory->with(array('apikey'=>'paypal_api_key'))
                             ->make('IPaymentProcessor');
 ?>
