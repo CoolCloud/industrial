@@ -59,12 +59,12 @@ abstract class Module
      */
     protected final function bind($class)
     {
-        if (!$this->_factory)
+        if (!$this->factory)
             throw new \Exception("bind must only be call from within the config() method");
 
-        $bound = new Binder($this->_factory);
+        $bound = new Binder($this->factory);
         $bound->bind($class);
-        $this->_factory->addBound($bound);
+        $this->factory->addBound($bound);
         return $bound;
     }
 
