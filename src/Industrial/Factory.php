@@ -143,9 +143,22 @@ class Factory
             $obj =  $binder->builder()->build($this->_params);
             $this->_params = array();
             return $obj;
+        } else { 
+            try {
+                $binder = new Binder($this);
+                $binder->bind($class)->toSelf();
+                $this->addBound($binder);
+
+                $obj = $binder->builder()->build($this->_params);
+                $this->_params = array();
+                return $obj;
+            } catch (Exception $e) {
+                throw new \Exception("JIT Binding failed for: $class ", 0, $e);
+            }
         }
 
         throw new \Exception("Class: $class has not been bound");
+
     }
 
     private function configure()
