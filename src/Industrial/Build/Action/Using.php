@@ -82,7 +82,7 @@ class Using implements IAction
         return function ($factory, \ReflectionClass &$obj) use ($cb) {
             $refl = $obj;
             $obj = $cb();
-            if (!$refl->isSubclassOf($obj))
+            if (!$refl->isInstance($obj))
                 throw new \Exception("Using callback must provide an instance of " . $refl->name);
         };
     }

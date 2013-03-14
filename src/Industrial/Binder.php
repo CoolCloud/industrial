@@ -162,7 +162,7 @@ class Binder
      */
     public function using($callback)
     {
-        $this->addAction(Action::Using($this->_className));
+        $this->addAction(Action::Using($callback));
         return $this;
     }
 
