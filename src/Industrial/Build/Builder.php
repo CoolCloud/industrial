@@ -67,7 +67,7 @@ class Builder
 		if (!is_string($name)) 
 			throw new \BadMethodCallException('$name must be a string');
 
-		$this->params[$name] = $value;
+		$this->_params[$name] = $value;
 	}
 
 	public function addParams($params)

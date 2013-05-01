@@ -28,6 +28,8 @@
  */
 namespace Industrial;
 
+use Industrial\Inject;
+
 /**
  * Dependency Injection factory
  *
@@ -158,6 +160,14 @@ class Factory
 
 		throw new \Exception("Class: $class has not been bound");
 
+	}
+
+	/**
+	 *
+	 */
+	public function lazy($class, $name = null)
+	{
+		return new Inject\LazyConstructor($this, $class, $name);
 	}
 
 	private function configure()

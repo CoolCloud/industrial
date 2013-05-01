@@ -23,73 +23,46 @@
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.2
- * @since 0.1
+ * @version 0.4.0
+ * @since 0.4
  */
-namespace Industrial;
+namespace Industrial\Inject;
 
 /**
- * Abstract module.
+ * Lazy Constructor
  *
  * @package pihi/industrial
  * @author Isaac Hildebrandt <isaac@pihimedia.com>
  * @copyright 2012 
  * @license http://www.apache.org/licenses/LICENSE-2.0.txt Apache Software License
- * @version 0.1.1
- * @since 0.1
+ * @version 0.4.0
+ * @since 0.4
  */
-abstract class Module
+class LazyConstructor implements IConstructor
 {
-	/**
-	 * Factory instance. Will be set only during the scope of the call 
-	 * to configure()
-	 *
-	 * @var \Industrial\Factory
-	 */
-	protected $factory = null;
+	private $_factory;
+
+	private $_class;
+
+	private $_name;
 
 	/**
-	 * Create a binder for the given class name and add it to the factory
-	 * 
-	 * @param string $class
-	 * @uses \Industrial\Factory::addBound()
-	 * @return \Industrial\Binder
-	 * @throws \Exception
-	 * @final 
+	 * @param \Industrial\Factory $factory
 	 */
-	protected final function bind($class)
+	public function __construct(\Industrial\Factory $factory, $class, $name = null)
 	{
-		if (!$this->factory)
-			throw new \Exception("bind must only be call from within the config() method");
-
-		$bound = new Binder($this->factory);
-		$bound->bind($class);
-		$this->factory->addBound($bound);
-		return $bound;
+		$this->_factory = $factory;
+		$this->_class = $class;
+		$this->_name = $name;
 	}
 
 	/**
-	 * Helper method to create a lazy constructor
+	 * Construct an object by injecting available parameters
 	 */
-	protected final function lazy($class, $name = null)
+	public function construct()
 	{
-		return $this->factory->lazy($class, $name);
+		return $this->_factory->make($this->_class, $this->_name);
 	}
-
-	/**
-	 * Configure module.
-	 * @param \Industrial\Factory
-	 */
-	public final function configure(Factory $factory) 
-	{
-		$this->factory = $factory;
-		$this->config();
-		$this->factory = null;
-	}
-
-	/**
-	 * Provided for module configuration.
-	 * @abstract
-	 */
-	abstract protected function config();
 }
+
+

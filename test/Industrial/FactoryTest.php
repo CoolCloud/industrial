@@ -77,6 +77,17 @@ class Industrial_FactoryTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($obj instanceof NamedBinder);
         $this->assertEquals("n3",$obj->name);
     }
+
+	public function testLazy()
+	{
+		$factory = new \Industrial\Factory(
+			new \TestModuleThree
+		);
+
+		$lazyclass = $factory->make(LazyBound::$class);
+		$this->assertTrue($lazyclass instanceof LazyBound);
+		$this->assertTrue($lazyclass->lazy instanceof LazyArg);
+	}
 }
 
 class TestModule extends \Industrial\Module
@@ -101,6 +112,16 @@ class TestModuleTwo extends \Industrial\Module
         $this->bind(NamedBinder::$class)->named("n3")
             ->toSelf()->method("setName", array("n3"));
     }
+}
+
+class TestModuleThree extends \Industrial\Module
+{
+	protected function config()
+	{
+		$this->bind(LazyBound::$class)
+			->toSelf()
+			->with('lazy', $this->lazy(LazyArg::$class));
+	}
 }
 
 class FactoryTestClass1
@@ -158,4 +179,19 @@ class NamedBinder
     {
         $this->name = $name;
     }
+}
+
+class LazyBound
+{
+	public static $class = "LazyBound";
+	public $lazy;
+	public function __construct($lazy)
+	{
+		$this->lazy = $lazy;
+	}
+}
+
+class LazyArg
+{
+	public static $class = "LazyArg";
 }

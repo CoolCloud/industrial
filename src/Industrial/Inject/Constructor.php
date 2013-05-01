@@ -38,7 +38,7 @@ namespace Industrial\Inject;
  * @version 0.2.0
  * @since 0.2
  */
-class Constructor
+class Constructor implements IConstructor
 {
 	private $_factory;
 
@@ -65,10 +65,11 @@ class Constructor
 		if ($constr = $this->_reflection->getConstructor()) {
 			$params = $constr->getParameters();
 			$inj_params = $this->getConstructorArguments($params, $args);
+
 			return $this->_reflection->newInstanceArgs($inj_params);
 		}
 
-		return $this->_reflection->newInstanceWithoutConstructor();
+		return $this->_reflection->newInstance();
 	}
 
 	private function getConstructorArguments ($params, array $args = null)
@@ -77,8 +78,13 @@ class Constructor
 		$inj_params = array();
 
 		foreach ($params as $param) {
+			//var_dump($params, $args);
 			if (array_key_exists($param->getName(), $args)) {
-				$inj_params[] = $args[$param->getName()];
+				$inj_param = $args[$param->getName()];
+				if ($inj_param instanceof IConstructor) {
+					$inj_param = $inj_param->construct();
+				}
+				$inj_params[] = $inj_param;
 				continue;
 			}
 
@@ -91,6 +97,7 @@ class Constructor
 				$inj_params[] = $this->getInjectableClass($pc->name);
 				continue;
 			}
+
 
 			throw new Exception("Could not inject parameter: " . $param->getName() . " in class: " . $this->_reflection->name . "\n");
 		}
