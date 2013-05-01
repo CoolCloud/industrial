@@ -44,52 +44,52 @@ use Industrial\Inject;
  */
 class Method implements IAction
 {
-    const Name = "Method";
+	const Name = "Method";
 
-    private $_final;
+	private $_final;
 
-    private $_method;
+	private $_method;
 
-    private $_args;
+	private $_args;
 
-    private $_callback;
+	private $_callback;
 
-    public static function getName()
-    {
-        return self::Name;
-    }
+	public static function getName()
+	{
+		return self::Name;
+	}
 
-    public function __construct ($method, $args)
-    {
-        $this->_method = $method;
-        $this->_args = $args;
-    }
+	public function __construct ($method, $args)
+	{
+		$this->_method = $method;
+		$this->_args = $args;
+	}
 
-    public static function isMultiple()
-    {
-        return true;
-    }
+	public static function isMultiple()
+	{
+		return true;
+	}
 
-    public function isFinal($final = null)
-    {
-        if (null !== $final) {
-            $this->_final = $final;
-        }
+	public function isFinal($final = null)
+	{
+		if (null !== $final) {
+			$this->_final = $final;
+		}
 
-        return $this->_final;
-    }
+		return $this->_final;
+	}
 
-    public function getProcessor()
-    {
-        $method = $this->_method;
-        $args = $this->_args;
-        return function ($factory, &$obj) use ($method, $args) {
-            $callable = array($obj, $method);
-            if (!is_callable($callable)) 
-                throw new Exception("Cannot call bound method: " . $method . " on class: " . get_class($obj));
+	public function getProcessor()
+	{
+		$method = $this->_method;
+		$args = $this->_args;
+		return function ($factory, &$obj) use ($method, $args) {
+			$callable = array($obj, $method);
+			if (!is_callable($callable)) 
+				throw new Exception("Cannot call bound method: " . $method . " on class: " . get_class($obj));
 
-            call_user_func_array($callable, $args);
-        };
-    }
+			call_user_func_array($callable, $args);
+		};
+	}
 }
 

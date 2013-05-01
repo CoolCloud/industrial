@@ -40,114 +40,114 @@ namespace Industrial\Reflect;
  */
 class Cache
 {
-    /**
-     * @var array
-     */
-    private static $_cache = array();
+	/**
+	 * @var array
+	 */
+	private static $_cache = array();
 
-    /**
-     * Get number of cached classes
-     * @return int
-     */
-    public static function size()
-    {
-        return count(self::$_cache);
-    }
+	/**
+	 * Get number of cached classes
+	 * @return int
+	 */
+	public static function size()
+	{
+		return count(self::$_cache);
+	}
 
-    /**
-     *
-     */
-    public static function debug()
-    {
-        var_dump(self::$_cache);
-    }
+	/**
+	 *
+	 */
+	public static function debug()
+	{
+		var_dump(self::$_cache);
+	}
 
-    /**
-     * Find and return a cached copy 
-     * If no cached copy exists cache on
-     * @param string $class Class name to reflect and cache
-     * @return \ReflectionClass
-     * @static
-     */
-    public static function get($class)
-    {
-        if (!class_exists($class) && !interface_exists($class))
-            throw new \Exception("Class or Interface" .$class. " does not exist");
+	/**
+	 * Find and return a cached copy 
+	 * If no cached copy exists cache on
+	 * @param string $class Class name to reflect and cache
+	 * @return \ReflectionClass
+	 * @static
+	 */
+	public static function get($class)
+	{
+		if (!class_exists($class) && !interface_exists($class))
+			throw new \Exception("Class or Interface" .$class. " does not exist");
 
-        if (substr($class, 0, 1) == "\\")
-            $class = substr($class, 1);
+		if (substr($class, 0, 1) == "\\")
+			$class = substr($class, 1);
 
-        if (false === ($idx = self::find($class))) {
-            return self::put($class);
-        }
+		if (false === ($idx = self::find($class))) {
+			return self::put($class);
+		}
 
-        return self::$_cache[$idx];
-    }
+		return self::$_cache[$idx];
+	}
 
-    /**
-     * Recursive implementation of binary search
-     * @param string $n Needle
-     * @param array $c Copy of cache
-     * @return mixed Returns int if $n is found false otherwise
-     */
-    private static function find($n, $c = null)
-    {
-        if ($c == null)
-            $c = self::$_cache;
+	/**
+	 * Recursive implementation of binary search
+	 * @param string $n Needle
+	 * @param array $c Copy of cache
+	 * @return mixed Returns int if $n is found false otherwise
+	 */
+	private static function find($n, $c = null)
+	{
+		if ($c == null)
+			$c = self::$_cache;
 
-        $l = count($c);   
+		$l = count($c);   
 
-        if ($l == 0) return false;
-        if ($l == 1) return ($n == $c[0]->name) ? 0 : false;
+		if ($l == 0) return false;
+		if ($l == 1) return ($n == $c[0]->name) ? 0 : false;
 
-        $m = (($l + ($l%2)) / 2);
-        if ($m >= $l) $m--;
+		$m = (($l + ($l%2)) / 2);
+		if ($m >= $l) $m--;
 
-        switch (self::compare($c[$m]->name, $n))
-        {
-        case 1:
-            $r = self::find($n, array_slice($c, 0, $m));
-            if ($r === false) return false;
-            return $m - ($m - $r);
-        case -1:
-            $r = self::find($n, array_slice($c, $m, ($l-$m)));
-            if ($r === false) return false;
-            return $r + $m;
-        case 0:
-            return $m;
-        }
-    }
+		switch (self::compare($c[$m]->name, $n))
+		{
+			case 1:
+				$r = self::find($n, array_slice($c, 0, $m));
+				if ($r === false) return false;
+				return $m - ($m - $r);
+			case -1:
+				$r = self::find($n, array_slice($c, $m, ($l-$m)));
+				if ($r === false) return false;
+				return $r + $m;
+			case 0:
+				return $m;
+		}
+	}
 
-    /**
-     * Implementation of insertion sort to keep $_cache sorted alphabetically
-     * @param string $n Class name
-     * @return \ReflectionClass
-     */
-    private static function put($n)
-    {
-        $refl = new \ReflectionClass($n);
+	/**
+	 * Implementation of insertion sort to keep $_cache sorted alphabetically
+	 * @param string $n Class name
+	 * @return \ReflectionClass
+	 */
+	private static function put($n)
+	{
+		$refl = new \ReflectionClass($n);
 
-        $c = count(self::$_cache);
-        while ($c) 
-        {
-            $r = self::compare(self::$_cache[$c-1]->name, $n);
-            if ($r == -1) break;
-            $c--;
-        }
+		$c = count(self::$_cache);
+		while ($c) 
+		{
+			$r = self::compare(self::$_cache[$c-1]->name, $n);
+			if ($r == -1) break;
+			$c--;
+		}
 
-        array_splice(self::$_cache, $c, 0, array($refl));
+		array_splice(self::$_cache, $c, 0, array($refl));
 
-        return $refl;
-    }
+		return $refl;
+	}
 
-    /**
-     * Run strcmp, clamp return value between 1 and -1
-     * @param string $a
-     * @param string $b
-     */
-    private static function compare($a, $b) 
-    {
-        return min(max(strcmp($a,$b), -1), 1);
-    }
+	/**
+	 * Run strcmp, clamp return value between 1 and -1
+	 * @param string $a
+	 * @param string $b
+	 */
+	private static function compare($a, $b) 
+	{
+		return min(max(strcmp($a,$b), -1), 1);
+	}
 }
 

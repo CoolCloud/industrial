@@ -40,8 +40,8 @@ namespace Industrial\Build\Action;
  */
 interface IAction
 {
-    static function getName();
-    static function isMultiple();
-    function isFinal($final = null);
-    function getProcessor();
+	static function getName();
+	static function isMultiple();
+	function isFinal($final = null);
+	function getProcessor();
 }

@@ -44,47 +44,47 @@ use Industrial\Inject;
  */
 class Using implements IAction
 {
-    const Name = "Using";
+	const Name = "Using";
 
-    private $_final;
+	private $_final;
 
-    private $_callback;
+	private $_callback;
 
-    public static function getName()
-    {
-        return self::Name;
-    }
+	public static function getName()
+	{
+		return self::Name;
+	}
 
-    public function __construct ($callback)
-    {
-        if (!is_callable($callback))
-            throw new \Exception("Using must be provided with a callable function");
-        $this->_callback = $callback;
-    }
+	public function __construct ($callback)
+	{
+		if (!is_callable($callback))
+			throw new \Exception("Using must be provided with a callable function");
+		$this->_callback = $callback;
+	}
 
-    public static function isMultiple()
-    {
-        return false;
-    }
+	public static function isMultiple()
+	{
+		return false;
+	}
 
-    public function isFinal($final = null)
-    {
-        if (null !== $final) {
-            $this->_final = $final;
-        }
+	public function isFinal($final = null)
+	{
+		if (null !== $final) {
+			$this->_final = $final;
+		}
 
-        return $this->_final;
-    }
+		return $this->_final;
+	}
 
-    public function getProcessor()
-    {
-        $cb = $this->_callback;
-        return function ($factory, \ReflectionClass &$obj) use ($cb) {
-            $refl = $obj;
-            $obj = $cb();
-            if (!$refl->isInstance($obj))
-                throw new \Exception("Using callback must provide an instance of " . $refl->name);
-        };
-    }
+	public function getProcessor()
+	{
+		$cb = $this->_callback;
+		return function ($factory, \ReflectionClass &$obj) use ($cb) {
+			$refl = $obj;
+			$obj = $cb();
+			if (!$refl->isInstance($obj))
+				throw new \Exception("Using callback must provide an instance of " . $refl->name);
+		};
+	}
 }
 

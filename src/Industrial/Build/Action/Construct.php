@@ -44,45 +44,45 @@ use Industrial\Inject;
  */
 class Construct implements IAction
 {
-    const Name = "Construct";
+	const Name = "Construct";
 
-    private $_final;
+	private $_final;
 
-    private $_args;
+	private $_args;
 
-    public static function getName()
-    {
-        return self::Name;
-    }
+	public static function getName()
+	{
+		return self::Name;
+	}
 
-    public static function isMultiple()
-    {
-        return false;
-    }
+	public static function isMultiple()
+	{
+		return false;
+	}
 
-    public function __construct(array $args = null)
-    {
-        $this->_args = $args;
-    }
+	public function __construct(array $args = null)
+	{
+		$this->_args = $args;
+	}
 
-    public function isFinal($final = null)
-    {
-        if (null !== $final) {
-            $this->_final = $final;
-        }
-        return $this->_final;
-    }
+	public function isFinal($final = null)
+	{
+		if (null !== $final) {
+			$this->_final = $final;
+		}
+		return $this->_final;
+	}
 
-    public function getProcessor()
-    {
-        $args = $this->_args;
-        return function ($factory, \ReflectionClass &$obj) use ($args) {
-            if ($args == null) {
-                $obj = $obj->newInstance(); 
-            } else {
-                $obj = $obj->newInstanceArgs($args);
-            }
-        };
-    }
+	public function getProcessor()
+	{
+		$args = $this->_args;
+		return function ($factory, \ReflectionClass &$obj) use ($args) {
+			if ($args == null) {
+				$obj = $obj->newInstance(); 
+			} else {
+				$obj = $obj->newInstanceArgs($args);
+			}
+		};
+	}
 }
 

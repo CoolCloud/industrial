@@ -40,48 +40,48 @@ namespace Industrial;
  */
 abstract class Module
 {
-    /**
-     * Factory instance. Will be set only during the scope of the call 
-     * to configure()
-     *
-     * @var \Industrial\Factory
-     */
-    protected $factory = null;
+	/**
+	 * Factory instance. Will be set only during the scope of the call 
+	 * to configure()
+	 *
+	 * @var \Industrial\Factory
+	 */
+	protected $factory = null;
 
-    /**
-     * Create a binder for the given class name and add it to the factory
-     * 
-     * @param string $class
-     * @uses \Industrial\Factory::addBound()
-     * @return \Industrial\Binder
-     * @throws \Exception
-     * @final 
-     */
-    protected final function bind($class)
-    {
-        if (!$this->factory)
-            throw new \Exception("bind must only be call from within the config() method");
+	/**
+	 * Create a binder for the given class name and add it to the factory
+	 * 
+	 * @param string $class
+	 * @uses \Industrial\Factory::addBound()
+	 * @return \Industrial\Binder
+	 * @throws \Exception
+	 * @final 
+	 */
+	protected final function bind($class)
+	{
+		if (!$this->factory)
+			throw new \Exception("bind must only be call from within the config() method");
 
-        $bound = new Binder($this->factory);
-        $bound->bind($class);
-        $this->factory->addBound($bound);
-        return $bound;
-    }
+		$bound = new Binder($this->factory);
+		$bound->bind($class);
+		$this->factory->addBound($bound);
+		return $bound;
+	}
 
-    /**
-     * Configure module.
-     * @param \Industrial\Factory
-     */
-    public final function configure(Factory $factory) 
-    {
-        $this->factory = $factory;
-        $this->config();
-        $this->factory = null;
-    }
+	/**
+	 * Configure module.
+	 * @param \Industrial\Factory
+	 */
+	public final function configure(Factory $factory) 
+	{
+		$this->factory = $factory;
+		$this->config();
+		$this->factory = null;
+	}
 
-    /**
-     * Provided for module configuration.
-     * @abstract
-     */
-    abstract protected function config();
+	/**
+	 * Provided for module configuration.
+	 * @abstract
+	 */
+	abstract protected function config();
 }

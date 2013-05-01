@@ -40,45 +40,66 @@ namespace Industrial\Build;
  */
 class Builder
 {
-    private $_factory;
+	private $_factory;
 
-    private $_process = array();
+	private $_process = array();
 
-    public function __construct (\Industrial\Factory $factory)
-    {
-        $this->_factory = $factory;
-    }
+	private $_params = array();
 
-    public function __clone ()
-    {
-        $process = array();
+	public function __construct (\Industrial\Factory $factory)
+	{
+		$this->_factory = $factory;
+	}
 
-        foreach ($this->_process as $proc) {
-            $process[] = $proc;
-        }
+	public function __clone ()
+	{
+		$process = array();
 
-        $this->_process = $process;
-    }
+		foreach ($this->_process as $proc) {
+			$process[] = $proc;
+		}
 
-    public function addAction(Action\IAction $action) 
-    {
-        $process = $action->getProcessor();
-        if (!is_callable($process)) {
-            throw new \Exception("Action processor must be callable.");
-        }
-        $this->_process[] = $process;
-    }
+		$this->_process = $process;
+	}
 
-    /**
-     * @param \Industrial\Factory $factory
-     * @return object
-     */
-    public function build(array $params = null)
-    {
-        $obj = null;
-        foreach ($this->_process as $process) {
-            $process($this->_factory,$obj,$params);
-        }
-        return $obj;
-    }
+	public function addParam($name, $value = null)
+	{
+		if (!is_string($name)) 
+			throw new \BadMethodCallException('$name must be a string');
+
+		$this->params[$name] = $value;
+	}
+
+	public function addParams($params)
+	{
+		foreach ($params as $name => $value) 
+		{
+			$this->addParam($name, $value);
+		}
+	}
+
+	public function addAction(Action\IAction $action) 
+	{
+		$process = $action->getProcessor();
+		if (!is_callable($process)) {
+			throw new \Exception("Action processor must be callable.");
+		}
+		$this->_process[] = $process;
+	}
+
+	/**
+	 * @param \Industrial\Factory $factory
+	 * @return object
+	 */
+	public function build(array $params = array())
+	{
+		$obj = null;
+
+		$params = array_merge($this->_params, $params);
+
+		foreach ($this->_process as $process) {
+			$process($this->_factory,$obj,$params);
+		}
+		return $obj;
+	}
 }

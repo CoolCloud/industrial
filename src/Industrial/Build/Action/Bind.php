@@ -43,39 +43,39 @@ use Industrial\Reflect;
  */
 class Bind implements IAction
 {
-    const Name = "Bind";
+	const Name = "Bind";
 
-    private $_reflection;
+	private $_reflection;
 
-    public static function getName()
-    {
-        return self::Name;
-    }
+	public static function getName()
+	{
+		return self::Name;
+	}
 
-    public static function isMultiple()
-    {
-        return false;
-    }
+	public static function isMultiple()
+	{
+		return false;
+	}
 
-    public function __construct ($className)
-    {
-        $this->_reflection = Reflect\Cache::get($className);
-    }
+	public function __construct ($className)
+	{
+		$this->_reflection = Reflect\Cache::get($className);
+	}
 
-    public function isFinal($final = null)
-    {
-        return false;
-    }
+	public function isFinal($final = null)
+	{
+		return false;
+	}
 
-    public function getProcessor()
-    {
-        $refl = $this->_reflection;
-        return function ($factory, &$obj) use ($refl) {
-            if ($obj != null) 
-                throw new Exception("Bind is given a null object. This should never happen.");
+	public function getProcessor()
+	{
+		$refl = $this->_reflection;
+		return function ($factory, &$obj) use ($refl) {
+			if ($obj != null) 
+				throw new Exception("Bind was given a non-null object. This should never happen.");
 
-            $obj = $refl;
-        };
-    }
+			$obj = $refl;
+		};
+	}
 }
 

@@ -40,11 +40,11 @@ namespace Industrial\Scope;
  */
 class Singleton
 {
-    public function HasInstance()
-    {
-    }
+	public function HasInstance()
+	{
+	}
 
-    public function GetInstance()
-    {
-    }
+	public function GetInstance()
+	{
+	}
 }

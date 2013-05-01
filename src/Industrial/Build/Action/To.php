@@ -44,67 +44,67 @@ use Industrial\Inject;
  */
 class To implements IAction
 {
-    const Name = "To";
+	const Name = "To";
 
-    private $_final; 
+	private $_final; 
 
-    private $_reflection;
+	private $_reflection;
 
-    private $_object;
+	private $_object;
 
-    /**
-     * @return string
-     * @static
-     */
-    public static function getName()
-    {
-        return self::Name;
-    }
+	/**
+	 * @return string
+	 * @static
+	 */
+	public static function getName()
+	{
+		return self::Name;
+	}
 
-    public static function isMultiple()
-    {
-        return false;
-    }
+	public static function isMultiple()
+	{
+		return false;
+	}
 
-    public function __construct ($className)
-    {
-        if (is_object($className)) {
-            $this->_object = $className;
-        } else {
-            $this->_reflection = Reflect\Cache::get($className);
-        }
-    }
+	public function __construct ($className)
+	{
+		if (is_object($className)) {
+			$this->_object = $className;
+		} else {
+			$this->_reflection = Reflect\Cache::get($className);
+		}
+	}
 
-    public function isFinal($final = null)
-    {
-        if (null !== $final) {
-            $this->_final = $final;
-        }
+	public function isFinal($final = null)
+	{
+		if (null !== $final) {
+			$this->_final = $final;
+		}
 
-        return $this->_final;
-    }
+		return $this->_final;
+	}
 
-    /**
-     *
-     */
-    public function getProcessor()
-    {
-        $refl = $this->_reflection;
-        $objc = $this->_object;
-        return function ($factory, \ReflectionClass &$obj, $params) use ($refl,$objc) {
-            if ($objc) {
-                if (!$obj->isSubclassOf($objc))
-                    throw new \Exception(get_class($objc) . " does not implement or extend " . $obj->name);
-                $obj = $objc;
-            } else {
-                if ($obj->name != $refl->name &&
-                    !($refl->isSubclassOf($obj->name))) 
-                    throw new \Exception($refl->name . " does not implement or extend " . $obj->name);
+	/**
+	 *
+	 */
+	public function getProcessor()
+	{
+		$refl = $this->_reflection;
+		$objc = $this->_object;
+		return function ($factory, \ReflectionClass &$obj, $params) use ($refl,$objc) {
+			if ($objc) {
+				if (!$obj->isSubclassOf($objc))
+					throw new \Exception(get_class($objc) . " does not implement or extend " . $obj->name);
+				$obj = $objc;
+			} else {
+				if ($obj->name != $refl->name &&
+						!($refl->isSubclassOf($obj->name))) 
+					throw new \Exception($refl->name . " does not implement or extend " . $obj->name);
 
-                $injc = new Inject\Constructor($factory,$refl);
-                $obj = $injc->construct($params);
-            }
-        };
-    }
+				$injc = new Inject\Constructor($factory,$refl);
+				$obj = $injc->construct($params);
+			}
+		};
+	}
 }
 

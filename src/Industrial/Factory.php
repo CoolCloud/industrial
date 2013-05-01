@@ -40,133 +40,132 @@ namespace Industrial;
  */
 class Factory
 {
-    /**
-     * Array of \Industrial\Binder
-     * @var array
-     */
-    private $_bound = array();
+	/**
+	 * Array of \Industrial\Binder
+	 * @var array
+	 */
+	private $_bound = array();
 
-    /**
-     * @var array
-     */
-    private $_modules = array();
+	/**
+	 * @var array
+	 */
+	private $_modules = array();
 
-    /**
-     * @var boolean
-     */
-    private $_configured = false;
+	/**
+	 * @var boolean
+	 */
+	private $_configured = false;
 
-    /**
-     * @var array
-     */
-    private $_params = array();
+	/**
+	 * @var array
+	 */
+	private $_params = array();
 
-    /**
-     * Constructor
-     * @param \Industrial\Module
-     */
-    public function __construct()
-    {
-        $modules = func_get_args();
-        foreach ($modules as $module) {
-            if (!($module instanceof \Industrial\Module)) 
-                throw new Exception("Modules must be of type: \\Industrial\\Module");
+	/**
+	 * Constructor
+	 * @param \Industrial\Module
+	 */
+	public function __construct()
+	{
+		$modules = func_get_args();
+		foreach ($modules as $module) {
+			if (!($module instanceof \Industrial\Module)) 
+				throw new Exception("Modules must be of type: \\Industrial\\Module");
 
-            $this->_modules[] = $module;
-        }
-    }
+			$this->_modules[] = $module;
+		}
+	}
 
-    /**
-     *
-     */
-    public function addModule(\Industrial\Module $module)
-    {
-        if ($this->_configured)
-            throw new Exception("Factory already configured");
+	/**
+	 *
+	 */
+	public function addModule(\Industrial\Module $module)
+	{
+		if ($this->_configured)
+			throw new Exception("Factory already configured");
 
-        $this->_modules[] = $module;
-    }
+		$this->_modules[] = $module;
+	}
 
-    /**
-     * Add a binder to the factory.
-     * @param \Industrial\Binder
-     */
-    public function addBound(Binder $bound)
-    {
-        $bound->finalize();
-        $this->_bound[] = $bound;
-    }
+	/**
+	 * Add a binder to the factory.
+	 * @param \Industrial\Binder
+	 */
+	public function addBound(Binder $bound)
+	{
+		$this->_bound[] = $bound;
+	}
 
-    /**
-     * Get the binder for the given class name.
-     * @param string $className
-     * @return \Industrial\Binder
-     */
-    public function getBound($className, $name = null) 
-    {
-        $this->configure();
-        foreach ($this->_bound as $bound) {
-            if ($bound->is($className, $name)) 
-                return $bound;
-        }
-    }
+	/**
+	 * Get the binder for the given class name.
+	 * @param string $className
+	 * @return \Industrial\Binder
+	 */
+	public function getBound($className, $name = null) 
+	{
+		$this->configure();
+		foreach ($this->_bound as $bound) {
+			if ($bound->is($className, $name)) 
+				return $bound;
+		}
+	}
 
-    /**
-     * Add parameters to be passed to constructor on build
-     * @param string|array $param
-     * @param mixed $value
-     * @return \Industrial\Factory Provide a fluent interface
-     * @since 0.3
-     */
-    public function with($param, $value = null)
-    {
-        if (is_array($param)) {
-            $this->_params = array_merge($this->_params, $param);
-        } else {
-            $this->_params[$param] = $value;
-        }
+	/**
+	 * Add parameters to be passed to constructor on build
+	 * @param string|array $param
+	 * @param mixed $value
+	 * @return \Industrial\Factory Provide a fluent interface
+	 * @since 0.3
+	 */
+	public function with($param, $value = null)
+	{
+		if (is_array($param)) {
+			$this->_params = array_merge($this->_params, $param);
+		} else {
+			$this->_params[$param] = $value;
+		}
 
-        return $this;
-    }
+		return $this;
+	}
 
-    /**
-     * Instantiate a class according to rules in it's binder.
-     * @param string $class
-     * @return mixed
-     * @throws \InvalidArgumentException
-     */
-    public function make($class, $name = null)
-    {
-        $this->configure();
+	/**
+	 * Instantiate a class according to rules in it's binder.
+	 * @param string $class
+	 * @return mixed
+	 * @throws \InvalidArgumentException
+	 */
+	public function make($class, $name = null)
+	{
+		$this->configure();
 
-        if ($binder = $this->getBound($class, $name)) {
-            $obj =  $binder->builder()->build($this->_params);
-            $this->_params = array();
-            return $obj;
-        } else { 
-            try {
-                $binder = new Binder($this);
-                $binder->bind($class)->toSelf();
-                $this->addBound($binder);
+		if ($binder = $this->getBound($class, $name)) {
+			$obj =  $binder->builder()->build($this->_params);
+			$this->_params = array();
+			return $obj;
+		} else { 
+			try {
+				$binder = new Binder($this);
+				$binder->bind($class)->toSelf();
+				$this->addBound($binder);
 
-                $obj = $binder->builder()->build($this->_params);
-                $this->_params = array();
-                return $obj;
-            } catch (Exception $e) {
-                throw new \Exception("JIT Binding failed for: $class ", 0, $e);
-            }
-        }
+				$obj = $binder->builder()->build($this->_params);
+				$this->_params = array();
+				return $obj;
+			} catch (Exception $e) {
+				throw new \Exception("JIT Binding failed for: $class ", 0, $e);
+			}
+		}
 
-        throw new \Exception("Class: $class has not been bound");
+		throw new \Exception("Class: $class has not been bound");
 
-    }
+	}
 
-    private function configure()
-    {
-        if ($this->_configured) return;
-        foreach ($this->_modules as $module) {
-            $module->configure($this);
-        }
-        $this->_configured = true;
-    }
+	private function configure()
+	{
+		if ($this->_configured) return;
+		foreach ($this->_modules as $module) {
+			$module->configure($this);
+		}
+		$this->_configured = true;
+	}
 }
