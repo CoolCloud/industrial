@@ -46,7 +46,7 @@ class To implements IAction
 {
 	const Name = "To";
 
-	private $_final; 
+	private $_final = false;
 
 	private $_reflection;
 
@@ -91,7 +91,7 @@ class To implements IAction
 	{
 		$refl = $this->_reflection;
 		$objc = $this->_object;
-		return function ($factory, \ReflectionClass &$obj, $params) use ($refl,$objc) {
+		return function ($factory, \ReflectionClass &$obj, $params = array()) use ($refl,$objc) {
 			if ($objc) {
 				if (!$obj->isSubclassOf($objc))
 					throw new \Exception(get_class($objc) . " does not implement or extend " . $obj->name);

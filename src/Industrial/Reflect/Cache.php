@@ -55,14 +55,6 @@ class Cache
 	}
 
 	/**
-	 *
-	 */
-	public static function debug()
-	{
-		var_dump(self::$_cache);
-	}
-
-	/**
 	 * Find and return a cached copy 
 	 * If no cached copy exists cache on
 	 * @param string $class Class name to reflect and cache

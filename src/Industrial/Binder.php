@@ -198,20 +198,22 @@ class Binder
 	 * Provide a scope object to maintain scoped injections
 	 * @param \Industrial\IScope Scope
 	 * @return \Industrial\Binder Provide Fluent Interface
-	 */
+	 * @todo Implement scopes
 	public function inScope(IScope $scope)
 	{
 		return $this;
 	}
+	 */
 
 	/**
 	 * Use the built in singleton scope to manage singleton objects
 	 * @return \Industrial\Binder Provide Fluent Interface
-	 */
+	 * @todo Implement scopes
 	public function inSingletonScope()
 	{
 		return $this;
 	}
+	 */
 
 	public function method($method, array $args = null)
 	{

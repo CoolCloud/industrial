@@ -46,13 +46,11 @@ class Method implements IAction
 {
 	const Name = "Method";
 
-	private $_final;
+	private $_final = false;
 
 	private $_method;
 
 	private $_args;
-
-	private $_callback;
 
 	public static function getName()
 	{

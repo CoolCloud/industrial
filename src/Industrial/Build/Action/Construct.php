@@ -46,7 +46,7 @@ class Construct implements IAction
 {
 	const Name = "Construct";
 
-	private $_final;
+	private $_final = false;
 
 	private $_args;
 
@@ -77,7 +77,7 @@ class Construct implements IAction
 	{
 		$args = $this->_args;
 		return function ($factory, \ReflectionClass &$obj) use ($args) {
-			if ($args == null) {
+			if ($args === null) {
 				$obj = $obj->newInstance(); 
 			} else {
 				$obj = $obj->newInstanceArgs($args);

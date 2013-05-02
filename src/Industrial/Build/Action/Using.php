@@ -46,7 +46,7 @@ class Using implements IAction
 {
 	const Name = "Using";
 
-	private $_final;
+	private $_final = false;
 
 	private $_callback;
 
