@@ -79,9 +79,9 @@ class Using implements IAction
 	public function getProcessor()
 	{
 		$cb = $this->_callback;
-		return function ($factory, \ReflectionClass &$obj) use ($cb) {
+		return function ($factory, \ReflectionClass &$obj, $params) use ($cb) {
 			$refl = $obj;
-			$obj = $cb();
+			$obj = $cb($params);
 			if (!$refl->isInstance($obj))
 				throw new \Exception("Using callback must provide an instance of " . $refl->name);
 		};

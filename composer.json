@@ -1,6 +1,6 @@
 {
     "name": "pihi/industrial",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "type": "library",
     "description": "Dependency Injection for PHP 5.3",
     "keywords": ["dependency injection"],
